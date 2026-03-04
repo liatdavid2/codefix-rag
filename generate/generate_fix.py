@@ -80,7 +80,7 @@ def generate_answer(query):
     results = rerank(query, candidates, k=3)
 
     # Limit code length
-    code_chunks = [r["chunk"][:800] for r in results]
+    code_chunks = [r["chunk"][:300] for r in results]
 
     tokenizer, model = load_model()
 
