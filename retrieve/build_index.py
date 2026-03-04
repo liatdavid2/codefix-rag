@@ -55,6 +55,9 @@ def collect_code(repo_path):
 
     for py_file in Path(repo_path).rglob("*.py"):
 
+        if "tests" in str(py_file):
+            continue
+
         try:
             source = py_file.read_text(encoding="utf8")
             tree = ast.parse(source)
@@ -69,7 +72,14 @@ def collect_code(repo_path):
                     lines = source.splitlines()[start:end]
                     chunk = "\n".join(lines)
 
-                    code_chunks.append(chunk)
+                    code_chunks.append(
+                    f"""
+                    File: {py_file}
+                    Object: {node.name}
+
+                    {chunk}
+                    """
+                    )
 
         except Exception:
             continue
@@ -89,7 +99,7 @@ def build_index(chunks):
 
     # Load model
     model = SentenceTransformer(
-        "sentence-transformers/all-MiniLM-L6-v2",
+        "BAAI/bge-small-en",
         token=hf_token
     )
 
