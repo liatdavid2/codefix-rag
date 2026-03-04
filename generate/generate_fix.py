@@ -44,21 +44,28 @@ def build_prompt(query, code_chunks):
     context = "\n\n".join(code_chunks)
 
     prompt = f"""
-### Instruction:
-You are an expert Python developer helping fix a bug.
+You are a senior Python engineer fixing a bug in a codebase.
 
-Bug description:
+BUG DESCRIPTION:
 {query}
 
-Relevant code:
+CODE CONTEXT:
 {context}
 
-### Task
+Your task:
 1. Identify the bug
-2. Suggest a fix
+2. Explain why it happens
 3. Provide corrected code
 
-### Response:
+Respond ONLY in this format:
+
+Explanation:
+<short explanation>
+
+Patch:
+<fixed code>
+
+Answer:
 """
 
     return prompt
