@@ -5,6 +5,8 @@ import faiss
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
+import ast
+from pathlib import Path
 
 
 DATASET = "datasets/processed/bugs_dataset.json"
@@ -47,31 +49,30 @@ def split_code(text, chunk_size=500):
     return chunks
 
 
-def collect_code(repo_path, max_files=40):
+def collect_code(repo_path):
 
     code_chunks = []
-    file_count = 0
 
-    for py_file in repo_path.rglob("*.py"):
-
-        if "tests" in str(py_file):
-            continue
+    for py_file in Path(repo_path).rglob("*.py"):
 
         try:
+            source = py_file.read_text(encoding="utf8")
+            tree = ast.parse(source)
 
-            text = py_file.read_text(encoding="utf8")
+            for node in ast.walk(tree):
 
-            chunks = split_code(text)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
 
-            code_chunks.extend(chunks)
+                    start = node.lineno - 1
+                    end = node.end_lineno
 
-            file_count += 1
+                    lines = source.splitlines()[start:end]
+                    chunk = "\n".join(lines)
 
-            if file_count >= max_files:
-                break
+                    code_chunks.append(chunk)
 
         except Exception:
-            pass
+            continue
 
     return code_chunks
 
