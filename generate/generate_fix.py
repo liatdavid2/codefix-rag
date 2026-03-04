@@ -11,7 +11,8 @@ from retrieve.retrieve_similar_code import retrieve_candidates, rerank
 
 load_dotenv()
 
-MODEL_NAME = "deepseek-ai/deepseek-coder-1.3b-instruct"
+#MODEL_NAME = "deepseek-ai/deepseek-coder-1.3b-instruct"
+MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
 
 tokenizer = None
 model = None
@@ -44,29 +45,18 @@ def build_prompt(query, code_chunks):
     context = "\n\n".join(code_chunks)
 
     prompt = f"""
-You are a senior Python engineer fixing a bug in a codebase.
+    You are a senior Python engineer.
 
-BUG DESCRIPTION:
-{query}
+    Bug description:
+    {query}
 
-CODE CONTEXT:
-{context}
+    Function to fix:
+    {context}
 
-Your task:
-1. Identify the bug
-2. Explain why it happens
-3. Provide corrected code
-
-Respond ONLY in this format:
-
-Explanation:
-<short explanation>
-
-Patch:
-<fixed code>
-
-Answer:
-"""
+    Return ONLY the corrected function.
+    Do not add explanations.
+    Do not generate unrelated code.
+    """
 
     return prompt
 
@@ -80,7 +70,7 @@ def generate_answer(query):
     results = rerank(query, candidates, k=3)
 
     # Limit code length
-    code_chunks = [r["chunk"][:300] for r in results]
+    code_chunks = [r["chunk"][:800] for r in results]
 
     tokenizer, model = load_model()
 
