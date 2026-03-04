@@ -2,11 +2,10 @@ import json
 import os
 import subprocess
 import faiss
+import ast
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
-import ast
-from pathlib import Path
 
 
 DATASET = "datasets/processed/bugs_dataset.json"
@@ -39,12 +38,24 @@ def clone_repo(project):
     return repo_path
 
 
-def split_code(text, chunk_size=500):
+def clean_code(text):
+    return "\n".join(
+        line for line in text.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    )
+
+
+def split_large_chunk(text, max_chars=1200):
+
+    if len(text) <= max_chars:
+        return [text]
 
     chunks = []
+    start = 0
 
-    for i in range(0, len(text), chunk_size):
-        chunks.append(text[i:i + chunk_size])
+    while start < len(text):
+        chunks.append(text[start:start + max_chars])
+        start += max_chars
 
     return chunks
 
@@ -55,12 +66,18 @@ def collect_code(repo_path):
 
     for py_file in Path(repo_path).rglob("*.py"):
 
-        if "tests" in str(py_file):
+        path_str = str(py_file)
+
+        if any(x in path_str for x in ["tests", "migrations", "build", "__pycache__"]):
             continue
 
         try:
+
             source = py_file.read_text(encoding="utf8")
+
             tree = ast.parse(source)
+
+            lines = source.splitlines()
 
             for node in ast.walk(tree):
 
@@ -69,17 +86,24 @@ def collect_code(repo_path):
                     start = node.lineno - 1
                     end = node.end_lineno
 
-                    lines = source.splitlines()[start:end]
-                    chunk = "\n".join(lines)
+                    code = "\n".join(lines[start:end])
 
-                    code_chunks.append(
-                    f"""
-                    File: {py_file}
-                    Object: {node.name}
+                    code = clean_code(code)
 
-                    {chunk}
-                    """
-                    )
+                    docstring = ast.get_docstring(node) or ""
+
+                    metadata = f"""
+File: {py_file}
+Object: {node.name}
+Type: {type(node).__name__}
+Docstring: {docstring}
+"""
+
+                    full_chunk = metadata + "\n" + code
+
+                    split_chunks = split_large_chunk(full_chunk)
+
+                    code_chunks.extend(split_chunks)
 
         except Exception:
             continue
@@ -91,13 +115,10 @@ def build_index(chunks):
 
     print("Loading embedding model")
 
-    # Load .env
     load_dotenv()
 
-    # Read token
     hf_token = os.getenv("HF_TOKEN")
 
-    # Load model
     model = SentenceTransformer(
         "BAAI/bge-small-en",
         token=hf_token
@@ -109,13 +130,15 @@ def build_index(chunks):
 
     embeddings = model.encode(
         chunks,
+        batch_size=128,
         show_progress_bar=True,
-        convert_to_numpy=True
+        convert_to_numpy=True,
+        normalize_embeddings=True
     )
 
     dimension = embeddings.shape[1]
 
-    index = faiss.IndexFlatL2(dimension)
+    index = faiss.IndexFlatIP(dimension)
 
     index.add(embeddings)
 
