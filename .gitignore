@@ -41,3 +41,7 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# Datasets
+datasets/
+.env
