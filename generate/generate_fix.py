@@ -14,6 +14,27 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
+def read_code_input() -> str:
+    """
+    Read multiline code snippet from the user.
+    User finishes input with an empty line.
+    """
+
+    print("Paste buggy code. Finish with empty line:\n")
+
+    lines = []
+
+    while True:
+        line = input()
+
+        if line.strip() == "":
+            break
+
+        lines.append(line)
+
+    return "\n".join(lines)
+
+
 def build_prompt(query: str, code_chunks: list[str]) -> str:
     """
     Ask the LLM for:
@@ -24,23 +45,21 @@ def build_prompt(query: str, code_chunks: list[str]) -> str:
     """
 
     context = ""
+
     for i, chunk in enumerate(code_chunks):
-        context += (
-            f"\n\n[Example {i+1}]\n"
-            f"```python\n{chunk}\n```"
-        )
+        context += f"\n\nExample {i+1}:\n{chunk}"
 
     prompt = f"""
 You are a senior Python engineer.
 
-Bug description:
+Buggy code:
 {query}
 
 Relevant code examples from the repository:
 {context}
 
 Task:
-1) Identify the most likely buggy function among the examples and fix it.
+1) Identify the bug in the provided code.
 2) Return:
    - a short explanation (1-2 sentences)
    - a unified git diff patch for the fix
@@ -59,7 +78,6 @@ Rules:
 - Keep the original function signature.
 - Diff must be unified diff format (starts with --- / +++ and @@ hunks).
 - corrected_function must be a single Python function definition.
-- Do not include tests, debug steps, or extra commentary outside JSON.
 """
 
     return prompt.strip()
@@ -69,13 +87,11 @@ def _safe_parse_json(text: str) -> dict:
 
     text = text.strip()
 
-    # remove markdown code fences
     if text.startswith("```"):
         text = text.replace("```json", "")
         text = text.replace("```", "")
         text = text.strip()
 
-    # try extracting JSON block
     first = text.find("{")
     last = text.rfind("}")
 
@@ -107,17 +123,16 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
     for i, r in enumerate(results):
 
         path = r.get("path", "unknown_file.py")
-        score = r.get("score", "?")
-        code = r["chunk"]
+        score = r.get("rerank_score", "?")
+        code = r.get("code", "")
 
         snippet = code[:300]
 
         print(f"\n[{i+1}] File: {path}  score={score}\n")
         print(snippet)
-        print("\n" + "-"*60)
+        print("\n" + "-" * 60)
 
-    # Provide a bit more context per snippet, but keep it bounded
-    code_chunks = [r["chunk"][:1200] for r in results]
+    code_chunks = [r.get("code", "")[:1200] for r in results]
 
     prompt = build_prompt(query, code_chunks)
 
@@ -128,16 +143,19 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
     )
 
     raw = (response.choices[0].message.content or "").strip()
+
     return _safe_parse_json(raw)
 
 
 def main():
-    query = input("Enter bug description: ").strip()
-    if not query:
-        print("Bug description is required.")
+
+    code_snippet = read_code_input()
+
+    if not code_snippet:
+        print("Code snippet is required.")
         return
 
-    result = generate_answer(query)
+    result = generate_answer(code_snippet)
 
     explanation = (result.get("explanation") or "").strip()
     diff = (result.get("diff") or "").rstrip()

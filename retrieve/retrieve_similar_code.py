@@ -5,22 +5,17 @@ from dotenv import load_dotenv
 
 INDEX_DIR = "datasets/index"
 
-# Load environment variables
 load_dotenv()
 
-# Read token from .env
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Pass token to HuggingFace
 if HF_TOKEN:
     os.environ["HUGGINGFACE_HUB_TOKEN"] = HF_TOKEN
 
 
-# Lazy loaded models
 EMBED_MODEL = None
 RERANK_MODEL = None
 
-# Load index only once
 INDEX = None
 CHUNKS = None
 
@@ -109,9 +104,28 @@ def retrieve_candidates(query, top_n=50):
         if idx == -1:
             continue
 
-        results.append(
-            (score, chunks[idx])
-        )
+        chunk_data = chunks[idx]
+
+        # chunks.json may contain raw code strings
+        if isinstance(chunk_data, str):
+
+            results.append(
+                {
+                    "faiss_score": float(score),
+                    "code": chunk_data,
+                    "path": "unknown_file.py"
+                }
+            )
+
+        else:
+
+            results.append(
+                {
+                    "faiss_score": float(score),
+                    "code": chunk_data["code"],
+                    "path": chunk_data.get("path", "unknown_file.py")
+                }
+            )
 
     return results
 
@@ -121,15 +135,15 @@ def rerank(query, candidates, k=5):
     rerank_model = get_rerank_model()
 
     pairs = [
-        (query, chunk)
-        for _, chunk in candidates
+        (query, c["code"])
+        for c in candidates
     ]
 
     scores = rerank_model.predict(pairs)
 
     merged = []
 
-    for (faiss_score, chunk), rerank_score in zip(
+    for candidate, rerank_score in zip(
         candidates,
         scores
     ):
@@ -137,8 +151,9 @@ def rerank(query, candidates, k=5):
         merged.append(
             {
                 "rerank_score": float(rerank_score),
-                "faiss_score": float(faiss_score),
-                "chunk": chunk
+                "faiss_score": candidate["faiss_score"],
+                "code": candidate["code"],
+                "path": candidate["path"]
             }
         )
 
@@ -152,7 +167,7 @@ def rerank(query, candidates, k=5):
 
 def main():
 
-    query = input("Enter bug description: ")
+    query = input("Enter buggy code or bug description: ")
 
     print("Retrieving similar code...")
 
@@ -182,7 +197,8 @@ def main():
             r["faiss_score"]
         )
 
-        print(r["chunk"][:500])
+        print("File:", r["path"])
+        print(r["code"][:500])
 
 
 if __name__ == "__main__":
