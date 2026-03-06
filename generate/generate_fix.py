@@ -84,6 +84,20 @@ Rules:
 
     return prompt.strip()
 
+def detect_exception(code: str):
+
+    try:
+        # isolated namespace
+        sandbox_globals = {"__builtins__": {}}
+        sandbox_locals = {}
+
+        exec(code, sandbox_globals, sandbox_locals)
+
+        return None
+
+    except Exception as e:
+
+        return type(e).__name__
 
 def _safe_parse_json(text: str) -> dict:
 
@@ -115,17 +129,18 @@ def _safe_parse_json(text: str) -> dict:
 
 
 def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
-
+    exception = detect_exception(query)
     query_text = f"""
-        Python bug fix
+        Python bug fixing task
+
+        Exception: {exception}
 
         Buggy code:
         {query}
 
-        Find the bug and suggest a fix.
+        Find similar code patterns and suggest a fix.
         """
     candidates = retrieve_candidates(query_text, top_n=top_n)
-
     results = rerank(query_text, candidates, k=top_k)
 
     print("\nTop retrieved code snippets:\n")
@@ -142,7 +157,16 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
         print(snippet)
         print("\n" + "-" * 60)
 
-    code_chunks = [r.get("code", "")[:800] for r in results]
+    code_chunks = [
+        f"""
+        File: {r.get("path")}
+        Object: {r.get("object")}
+        Type: {r.get("type")}
+
+        {r.get("code")}
+        """[:800]
+        for r in results
+    ]
 
     prompt = build_prompt(query, code_chunks)
 
