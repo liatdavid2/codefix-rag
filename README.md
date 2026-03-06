@@ -10,6 +10,39 @@ This project implements a **Code RAG system** that detects and fixes bugs in Pyt
 The system receives a **buggy code snippet**, retrieves similar code from a repository index, reranks the results, and uses an LLM to generate a **diff patch and corrected function**.
 
 ---
+# The Dataset: BugsInPy
+
+BugsInPy is a benchmark dataset of real bugs collected from open-source Python projects.  
+Each bug includes the buggy version of the code, the fixed version, and tests that reproduce the bug.
+
+---
+
+## Dataset Structure
+
+Each bug entry contains metadata describing the buggy and fixed versions of the code.
+
+Example fields:
+
+- bug_id  
+- project  
+- python_version  
+- buggy_commit  
+- fixed_commit  
+- test_file  
+- path  
+
+Example record:
+
+```json
+{
+  "bug_id": "pandas_82",
+  "project": "pandas",
+  "buggy_commit": "6f395ad",
+  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
+  "test_file": "pandas/tests/reshape/merge/test_merge.py"
+}
+```
+---
 
 # System Architecture
 
