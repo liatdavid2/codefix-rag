@@ -80,6 +80,8 @@ Rules:
 - Only modify the function body, do not modify code outside the function.
 - Diff must be unified diff format (starts with --- / +++ and @@ hunks).
 - corrected_function must be a single Python function definition.
+- If the code is already valid Python and does not raise an exception,
+do not introduce new exceptions unless necessary.
 """
 
     return prompt.strip()
