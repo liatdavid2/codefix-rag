@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from retrieve.retrieve_similar_code import retrieve_candidates, rerank
+from validation.validate_patch import validate_fix
 
 
 load_dotenv()
@@ -169,6 +170,17 @@ def main():
 
     print("\nCorrected Function:\n")
     print(corrected if corrected else "(none)")
+
+    # ---------- NEW PART ----------
+    from validation.validate_patch import validate_fix
+
+    validation = validate_fix(
+        corrected,
+        result.get("rerank_score", 0.0)
+    )
+
+    print("\nValidation:\n")
+    print(validation)
 
 
 if __name__ == "__main__":
