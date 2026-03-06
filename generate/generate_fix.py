@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from retrieve.retrieve_similar_code import retrieve_candidates, rerank
-from validation.validate_patch import validate_fix
 from safety.input_validation import validate_query
+from utils.logger import logger
 
 
 load_dotenv()
@@ -191,11 +191,14 @@ def main():
     if not code_snippet:
         print("Code snippet is required.")
         return
+    
+    logger.info(f"Input code snippet: {code_snippet[:120]}")
 
     # Safety validation
     code_snippet = validate_query(code_snippet)
 
     result = generate_answer(code_snippet)
+    logger.info(f"Generated fix snippet: {result.get('corrected_function','')[:120]}")
 
     explanation = (result.get("explanation") or "").strip()
     diff = (result.get("diff") or "").rstrip()
