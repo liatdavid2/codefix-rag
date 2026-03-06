@@ -71,7 +71,9 @@ def check_lint(code):
     result = subprocess.run(
         ["flake8", path],
         capture_output=True,
-        text=True
+        text=True,
+        encoding="utf-8",
+         errors="ignore"
     )
 
     return 1 if result.returncode == 0 else 0
