@@ -12,10 +12,15 @@ def recall_at_k(retrieved_files, target_module):
 
     for f in retrieved_files:
 
-        filename = os.path.basename(f)
-        filename = filename.replace(".py", "")
+        filename = os.path.basename(f).replace(".py", "")
+        dirname = os.path.basename(os.path.dirname(f))
 
+        # match by file name
         if target_module in filename:
+            return 1
+
+        # match by folder name
+        if target_module in dirname:
             return 1
 
     return 0
@@ -31,7 +36,22 @@ def evaluate():
 
     for bug in bugs:
 
-        query = bug["test_file"]
+        query = f"""
+        Project: {bug['project']}
+
+        Bug related to test:
+        {bug['test_file']}
+
+        Target module:
+        {os.path.basename(bug['test_file'])}
+        """
+
+        target = bug["test_file"]
+
+        target_module = os.path.basename(target)
+        target_module = target_module.replace("test_", "")
+        target_module = target_module.replace(".py", "")
+        query += f"\nModule name: {target_module}"
 
         # Step 1: retrieve candidates
         candidates = retrieve_candidates(query, top_n=50)
