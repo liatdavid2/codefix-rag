@@ -191,6 +191,30 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
     return parsed
 
+def run_dataset():
+
+    with open("datasets/processed/bugs_dataset.json", "r", encoding="utf8") as f:
+        bugs = json.load(f)
+
+    for bug in bugs:
+
+        bug_id = bug["bug_id"]
+
+        query = f"""
+Project: {bug['project']}
+
+Bug related to test:
+{bug['test_file']}
+"""
+
+        print("\nProcessing", bug_id)
+
+        result = generate_answer(query)
+
+        store_bug_fix_pair(bug_id, query, result)
+
+        print("Saved fix for", bug_id)
+
 
 def main():
 
@@ -206,7 +230,7 @@ def main():
     code_snippet = validate_query(code_snippet)
 
     result = generate_answer(code_snippet)
-    store_bug_fix_pair(code_snippet, result)
+    store_bug_fix_pair("manual_input", code_snippet, result)
     logger.info(f"Generated fix snippet: {result.get('corrected_function','')[:120]}")
 
     explanation = (result.get("explanation") or "").strip()
@@ -235,4 +259,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    run_dataset()

@@ -6,11 +6,12 @@ from datetime import datetime
 FEEDBACK_FILE = "datasets/learn/bug_fix_pairs.jsonl"
 
 
-def store_bug_fix_pair(query, result):
+def store_bug_fix_pair(bug_id, query, result):
 
     os.makedirs("datasets/learn", exist_ok=True)
 
     record = {
+        "bug_id": bug_id,
         "timestamp": datetime.utcnow().isoformat(),
         "buggy_code": query,
         "generated_fix": result.get("corrected_function"),
