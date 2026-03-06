@@ -35,69 +35,58 @@ Returns fixes as structured JSON including explanation, patch, and corrected cod
 
 ---
 
-# System Architecture
+## System Architecture
 
-CodeFix-RAG consists of two main pipelines:
+CodeFix-RAG consists of two pipelines:
 
-1. **Offline pipeline** – builds the vector index from source code  
-2. **Online pipeline** – retrieves similar code and generates bug fixes
+1. Offline pipeline – builds the vector index  
+2. Online pipeline – retrieves similar code and generates bug fixes
 
-                OFFLINE PIPELINE
- ┌─────────────────────────────────────────────┐
- │                                             │
- │     Open Source Python Repositories         │
- │                │                            │
- │                ▼                            │
- │        Python Code Parsing                  │
- │                │                            │
- │                ▼                            │
- │        Function Extraction                  │
- │                │                            │
- │                ▼                            │
- │            Code Chunking                    │
- │                │                            │
- │                ▼                            │
- │        Embedding Model (BGE-small)          │
- │                │                            │
- │                ▼                            │
- │           Vector Embeddings                 │
- │                │                            │
- │                ▼                            │
- │            FAISS Index                      │
- │           + chunks.json                     │
- │                                             │
- └─────────────────────────────────────────────┘
+```mermaid
+flowchart TB
 
-                       │
-                       │
-                       ▼
+subgraph Offline_Pipeline
+A[Open Source Python Repositories]
+B[Python Code Parsing]
+C[Function Extraction]
+D[Code Chunking]
+E[Embedding Model<br/>BAAI/bge-small-en]
+F[Vector Embeddings]
+G[FAISS Index]
+H[chunks.json Metadata]
 
-                ONLINE PIPELINE
+A --> B
+B --> C
+C --> D
+D --> E
+E --> F
+F --> G
+F --> H
+end
 
-        Buggy Python Code (User Input)
-                       │
-                       ▼
-               Code Embedding
-                       │
-                       ▼
-                FAISS Retrieval
-                 (Top-N Code)
-                       │
-                       ▼
-             CrossEncoder Reranking
-                       │
-                       ▼
-                Top-K Examples
-                       │
-                       ▼
-               Prompt Construction
-                       │
-                       ▼
-                  LLM Repair
-                 (GPT-4o-mini)
-                       │
-                       ▼
-      Explanation + Diff Patch + Fixed Code
+subgraph Online_Pipeline
+I[Buggy Python Code]
+J[Code Embedding]
+K[FAISS Vector Search]
+L[Top-N Code Snippets]
+M[CrossEncoder Reranker<br/>ms-marco-MiniLM-L-6-v2]
+N[Top-K Relevant Examples]
+O[Prompt Construction]
+P[LLM Repair<br/>GPT-4o-mini]
+Q[Explanation + Diff Patch + Fixed Code]
+
+I --> J
+J --> K
+K --> L
+L --> M
+M --> N
+N --> O
+O --> P
+P --> Q
+end
+
+G --> K
+H --> K
 
 ---
 
