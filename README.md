@@ -35,25 +35,25 @@ Returns fixes as structured JSON including explanation, patch, and corrected cod
 
 ---
 
-## System Architecture
+# System Architecture
 
-CodeFix-RAG consists of two pipelines:
+CodeFix-RAG consists of two main pipelines:
 
-1. Offline pipeline – builds the vector index  
-2. Online pipeline – retrieves similar code and generates bug fixes
+1. **Offline pipeline** – builds the vector index from source code  
+2. **Online pipeline** – retrieves similar code and generates bug fixes
 
 ```mermaid
 flowchart TB
 
-subgraph Offline_Pipeline
+subgraph Offline Pipeline
 A[Open Source Python Repositories]
 B[Python Code Parsing]
 C[Function Extraction]
 D[Code Chunking]
-E[Embedding Model<br/>BAAI/bge-small-en]
+E[Embedding Model BGE Small]
 F[Vector Embeddings]
 G[FAISS Index]
-H[chunks.json Metadata]
+H[Chunks Metadata]
 
 A --> B
 B --> C
@@ -64,16 +64,16 @@ F --> G
 F --> H
 end
 
-subgraph Online_Pipeline
+subgraph Online Pipeline
 I[Buggy Python Code]
 J[Code Embedding]
-K[FAISS Vector Search]
-L[Top-N Code Snippets]
-M[CrossEncoder Reranker<br/>ms-marco-MiniLM-L-6-v2]
-N[Top-K Relevant Examples]
-O[Prompt Construction]
-P[LLM Repair<br/>GPT-4o-mini]
-Q[Explanation + Diff Patch + Fixed Code]
+K[FAISS Retrieval]
+L[Top N Code Snippets]
+M[Cross Encoder Reranker]
+N[Top K Results]
+O[Prompt Builder]
+P[LLM Fix Generation]
+Q[Explanation Diff Patch Fixed Code]
 
 I --> J
 J --> K
