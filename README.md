@@ -42,51 +42,58 @@ CodeFix-RAG consists of two main pipelines:
 1. **Offline pipeline** – builds the vector index from source code  
 2. **Online pipeline** – retrieves similar code and generates bug fixes
 
-```mermaid
-flowchart TB
+OFFLINE PIPELINE
+────────────────────────────────
 
-subgraph Offline Pipeline
-A[Open Source Python Repositories]
-B[Python Code Parsing]
-C[Function Extraction]
-D[Code Chunking]
-E[Embedding Model BGE Small]
-F[Vector Embeddings]
-G[FAISS Index]
-H[Chunks Metadata]
+Open Source Repositories
+          │
+          ▼
+   Python Code Parsing
+          │
+          ▼
+   Function Extraction
+          │
+          ▼
+      Code Chunking
+          │
+          ▼
+ Embedding Model (BGE)
+          │
+          ▼
+     Vector Embeddings
+          │
+          ▼
+        FAISS Index
+      + chunks.json
 
-A --> B
-B --> C
-C --> D
-D --> E
-E --> F
-F --> G
-F --> H
-end
 
-subgraph Online Pipeline
-I[Buggy Python Code]
-J[Code Embedding]
-K[FAISS Retrieval]
-L[Top N Code Snippets]
-M[Cross Encoder Reranker]
-N[Top K Results]
-O[Prompt Builder]
-P[LLM Fix Generation]
-Q[Explanation Diff Patch Fixed Code]
+ONLINE PIPELINE
+────────────────────────────────
 
-I --> J
-J --> K
-K --> L
-L --> M
-M --> N
-N --> O
-O --> P
-P --> Q
-end
-
-G --> K
-H --> K
+Buggy Python Code
+      (User Input)
+          │
+          ▼
+     Code Embedding
+          │
+          ▼
+      FAISS Search
+      (Top-N code)
+          │
+          ▼
+ CrossEncoder Reranker
+          │
+          ▼
+   Top-K Code Snippets
+          │
+          ▼
+     Prompt Builder
+          │
+          ▼
+     LLM (GPT-4o-mini)
+          │
+          ▼
+ Explanation + Diff + Fix
 
 ---
 
