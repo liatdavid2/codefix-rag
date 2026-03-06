@@ -9,6 +9,7 @@ from openai import OpenAI
 from retrieve.retrieve_similar_code import retrieve_candidates, rerank
 from safety.input_validation import validate_query
 from utils.logger import logger
+from learn.store_feedback import store_bug_fix_pair
 
 
 load_dotenv()
@@ -198,6 +199,7 @@ def main():
     code_snippet = validate_query(code_snippet)
 
     result = generate_answer(code_snippet)
+    store_bug_fix_pair(code_snippet, result)
     logger.info(f"Generated fix snippet: {result.get('corrected_function','')[:120]}")
 
     explanation = (result.get("explanation") or "").strip()
