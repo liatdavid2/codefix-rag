@@ -694,3 +694,21 @@ To protect the LLM service from excessive traffic or abuse, the system will incl
 This mechanism limits the number of requests that can be processed within a given time window.
 
 **Status:** Not implemented yet (planned improvement).
+
+#### 4. Output Validation (Basic) – Planned
+
+To improve robustness, the system will include a basic validation step for the LLM output before returning the result to the user.
+
+**Status:** Not implemented yet (planned improvement).
+
+The validation will ensure that the generated response does not exceed reasonable limits and helps protect the system from malformed or excessively large outputs.
+
+Example implementation:
+
+```python
+def validate_output(answer):
+
+    if len(answer) > 2000:
+        raise ValueError("LLM output too large")
+
+    return answer
