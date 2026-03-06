@@ -117,7 +117,9 @@ def get_ground_truth_patch(repo_path, buggy_commit, fixed_commit):
             ["git", "diff", buggy_commit, fixed_commit],
             cwd=repo_path,
             capture_output=True,
-            text=True
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
         )
 
         return result.stdout
