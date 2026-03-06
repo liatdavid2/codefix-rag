@@ -83,6 +83,9 @@ def retrieve_candidates(query, top_n=50):
 
     index, chunks = load_index()
 
+    # improve embedding for code search
+    query = "Find similar buggy Python code:\n" + query
+
     query_embedding = embed_model.encode(
         [query],
         convert_to_numpy=True,
