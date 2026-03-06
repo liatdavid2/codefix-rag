@@ -49,7 +49,9 @@ def validate_lint(code: str) -> bool:
         result = subprocess.run(
             ["ruff", "check", temp_path],
             capture_output=True,
-            text=True
+            text=True,
+            encoding="utf-8",
+            errors="ignore"
         )
 
         os.remove(temp_path)
