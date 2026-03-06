@@ -42,59 +42,58 @@ CodeFix-RAG consists of two main pipelines:
 1. **Offline pipeline** – builds the vector index from source code  
 2. **Online pipeline** – retrieves similar code and generates bug fixes
 
+```
 OFFLINE PIPELINE
-────────────────────────────────
 
-Open Source Repositories
-          │
-          ▼
-   Python Code Parsing
-          │
-          ▼
-   Function Extraction
-          │
-          ▼
-      Code Chunking
-          │
-          ▼
- Embedding Model (BGE)
-          │
-          ▼
-     Vector Embeddings
-          │
-          ▼
-        FAISS Index
-      + chunks.json
+Open Source Python Repositories
+            |
+            v
+      Python Code Parsing
+            |
+            v
+      Function Extraction
+            |
+            v
+         Code Chunking
+            |
+            v
+   Embedding Model (BGE-small)
+            |
+            v
+       Vector Embeddings
+            |
+            v
+          FAISS Index
+         + chunks.json
+
 
 
 ONLINE PIPELINE
-────────────────────────────────
 
-Buggy Python Code
-      (User Input)
-          │
-          ▼
-     Code Embedding
-          │
-          ▼
-      FAISS Search
-      (Top-N code)
-          │
-          ▼
- CrossEncoder Reranker
-          │
-          ▼
-   Top-K Code Snippets
-          │
-          ▼
-     Prompt Builder
-          │
-          ▼
-     LLM (GPT-4o-mini)
-          │
-          ▼
- Explanation + Diff + Fix
-
+Buggy Python Code (User Input)
+            |
+            v
+        Code Embedding
+            |
+            v
+        FAISS Retrieval
+        (Top-N Results)
+            |
+            v
+     CrossEncoder Reranker
+            |
+            v
+       Top-K Code Snippets
+            |
+            v
+        Prompt Builder
+            |
+            v
+        LLM (GPT-4o-mini)
+            |
+            v
+   Explanation + Diff Patch + Fix
+```
 ---
 
 # Retrieval Model
