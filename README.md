@@ -1,15 +1,3 @@
-להלן **README מלא לפרויקט שלך**, כולל:
-
-* תיאור המערכת
-* תרשים Offline + Online pipeline
-* הסבר על Embedding / FAISS / Reranker / LLM
-* בעיות שנתקלת בהן (CMD input וכו')
-* איך להריץ
-
-אפשר להעתיק ישר ל־`README.md`.
-
----
-
 # CodeFix-RAG: Retrieval-Augmented Bug Fixing for Python
 
 This project implements a **Code RAG system** that detects and fixes bugs in Python code using:
