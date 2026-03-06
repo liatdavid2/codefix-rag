@@ -502,13 +502,125 @@ Ensures reliable parsing and downstream automation.
 
 ---
 
-# Future Improvements
+## Example: Bug Fix Generation
 
-Possible extensions:
+Below is an example of running the system on a small Python bug.
 
-* AST-based bug detection
-* hybrid retrieval (BM25 + vector search)
-* indexing buggy/fixed code pairs
-* training embeddings specifically for code repair
+### Input
+
+User provides buggy code:
+
+```python
+def call_method(obj, name):
+    method = getattr(obj, name)
+    return method()
+
+print(call_method({}, "run"))
+```
+
+This code raises an error because the object (`dict`) does not have a method named `"run"`.
 
 ---
+
+### Retrieval Stage
+
+The system retrieves similar code patterns from the indexed repository.
+
+Top retrieved snippets:
+
+```
+File: scrapy/utils/request.py
+Object: _get_method
+
+def _get_method(obj: Any, name: Any) -> Any:
+    name = str(name)
+    try:
+        return getattr(obj, name)
+```
+
+This example contains a similar pattern using `getattr`, which helps the model understand how attribute access is handled in real code.
+
+---
+
+### Generated Explanation
+
+```
+The bug occurs because the method being called may not exist on the given object,
+leading to an AttributeError. The code should check if the method exists before
+attempting to call it.
+```
+
+---
+
+### Generated Patch
+
+```diff
+--- original.py
++++ corrected.py
+@@
+ def call_method(obj, name):
+-    method = getattr(obj, name)
+-    return method()
++    if hasattr(obj, name):
++        return getattr(obj, name)()
++    raise ValueError(f'Method {name!r} not found in: {obj}')
+```
+
+---
+
+### Corrected Function
+
+```python
+def call_method(obj, name):
+    if hasattr(obj, name):
+        return getattr(obj, name)()
+    raise ValueError(f'Method {name!r} not found in: {obj}')
+```
+
+---
+
+### Validation
+
+The generated patch is validated automatically:
+
+```
+{
+  "syntax_ok": True,
+  "compile_ok": True,
+  "lint_ok": False,
+  "confidence": 0.4
+}
+```
+
+Validation checks include:
+
+* syntax validation
+* compilation check
+* lint analysis
+* confidence estimation based on retrieval score
+
+---
+
+### Pipeline
+
+The system pipeline:
+
+```
+Buggy Code
+   ↓
+Sandbox Execution (detect exception)
+   ↓
+Embedding Generation
+   ↓
+FAISS Vector Retrieval
+   ↓
+CrossEncoder Reranking
+   ↓
+LLM Patch Generation
+   ↓
+Patch Validation
+```
+
+---
+
+
