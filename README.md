@@ -738,3 +738,46 @@ Example record:
 ```
 {"timestamp": "2026-03-06T14:14:35.978564", "buggy_code": "...", "generated_fix": "...", "explanation": "..."}
 ```
+---
+
+## Evaluation
+
+The retrieval pipeline is evaluated using bugs from the **BugsInPy dataset**.
+For each bug, the system attempts to retrieve the relevant source module from the repository that is related to the failing test.
+
+### Evaluation Process
+
+For every bug in the dataset:
+
+1. The system takes the **test file path** as the query.
+2. The query is used to retrieve candidate code snippets from the **FAISS index of repository code**.
+3. The retrieved candidates are **reranked using a CrossEncoder (`ms-marco-MiniLM-L-6-v2`)**.
+4. The system checks whether the **correct source module appears in the top-K retrieved files**.
+
+### Metric
+
+We report **Recall@K**, which measures how often the correct module appears within the top K retrieved results.
+
+```
+Recall@K = correct retrievals / total bugs
+```
+
+### Example Output
+
+```
+Bug: scrapy_24
+Target module: downloader_handlers
+Retrieved: [...handlers/base.py, ...handlers/__init__.py]
+Hit: 1
+```
+
+### Results
+
+```
+Total bugs: 20
+Correct retrieval: 18
+Recall@5: 0.90
+```
+
+This means that the system retrieves the correct module within the **top-5 results in 90% of the cases**, providing relevant context for the LLM to generate a fix.
+---
