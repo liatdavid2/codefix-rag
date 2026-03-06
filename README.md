@@ -645,3 +645,58 @@ ValueError: Potential prompt injection detected
 The validation layer detects malicious instructions using **embedding similarity** and blocks the request before it reaches the retrieval or LLM stages.
 
 
+#### 2. Logging
+
+The system logs key pipeline events to support monitoring and debugging in production environments.  
+Each request records the input code snippet and the generated fix. Logs are written to:
+
+```
+
+logs/app.log
+
+```
+
+Example run:
+
+```
+
+(.venv) C:\Users\liat\Documents\work\codefix-rag>python -m generate.generate_fix
+Paste buggy code. Type END on a new line when finished:
+
+def call_method(obj, name):
+method = getattr(obj, name)
+return method()
+
+print(call_method({}, "run"))
+END
+
+```
+
+Example log output (`logs/app.log`):
+
+```
+
+2026-03-06 15:54:46,683 - Input code snippet: def call_method(obj, name):
+method = getattr(obj, name)
+return method()
+
+print(call_method({}, "run"))
+
+2026-03-06 15:56:31,499 - Generated fix snippet: def call_method(obj, name):
+if not hasattr(obj, name):
+raise ValueError(f"Method {name!r} not found in: {obj
+
+2026-03-06 15:58:55,067 - Generated fix snippet: def call_method(obj, name):
+method = getattr(obj, name, None)
+if callable(method):
+return method()
+
+```
+
+Logging helps track the full RAG pipeline execution, including:
+
+- user input
+- retrieval and model execution
+- generated fixes
+
+This enables easier debugging, monitoring, and auditing of system behavior.
