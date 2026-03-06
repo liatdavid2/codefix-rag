@@ -467,4 +467,40 @@ def get_item(lst, index):
         return None
 ```
 
----
+# Project Structure
+
+```
+codefix-rag
+│
+├── datasets                              # Data used for building the retrieval index
+│   │
+│   ├── raw/BugsInPy                      # Raw BugsInPy dataset containing real bug metadata
+│   │   ├── framework                     # BugsInPy framework utilities
+│   │   └── projects                      # Buggy project versions used in BugsInPy
+│   │
+│   ├── processed                         # Processed dataset derived from BugsInPy
+│   │
+│   └── repos                             # Cloned open-source repositories used for code retrieval
+│       ├── fastapi                       # FastAPI source code
+│       ├── luigi                         # Luigi workflow library source code
+│       ├── scrapy                        # Scrapy web scraping framework source code
+│       ├── thefuck                       # TheFuck command correction tool source code
+│       └── tqdm                          # tqdm progress bar library source code
+│
+├── ingest                                # Data ingestion scripts
+│   └── ingest_bugsinpy.py                # Parses BugsInPy dataset and prepares processed metadata
+│
+├── retrieve                              # Retrieval system implementation
+│   ├── build_index.py                    # Builds FAISS index from repository code embeddings
+│   └── retrieve_similar_code.py          # Performs semantic retrieval and neural reranking
+│
+├── generate                              # Online generation pipeline
+│   └── generate_fix.py                   # Retrieves similar code and generates bug fix using LLM
+│
+├── .env                                  # Environment variables (API keys)
+├── requirements.txt                      # Python dependencies for the project
+├── Dockerfile                            # Container configuration for running the system
+├── update_readme.sh                      # Utility script for updating README automatically
+├── .gitignore                            # Git ignored files configuration
+└── README.md                             # Project documentation
+```
