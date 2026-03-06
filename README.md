@@ -1,169 +1,121 @@
-# The project: CodeFix-RAG – Retrieval-Augmented Bug Fixing for Python
+# CodeFix-RAG
 
-This project implements a **Code RAG system** that detects and fixes bugs in Python code using:
+### Retrieval-Augmented Bug Fixing for Python
+
+CodeFix-RAG is a system that detects and fixes Python bugs using a **Retrieval-Augmented Generation (RAG)** pipeline.
+
+The system combines:
 
 * semantic code retrieval
-* vector search (FAISS)
-* reranking
+* vector similarity search (FAISS)
+* neural reranking
 * LLM-based code repair
 
-The system receives a **buggy code snippet**, retrieves similar code from a repository index, reranks the results, and uses an LLM to generate a **diff patch and corrected function**.
+Given a **buggy Python snippet**, the system retrieves similar code examples from indexed repositories and uses them as context for an LLM that generates:
+
+* bug explanation
+* Git diff patch
+* corrected function
 
 ---
-# The Dataset: BugsInPy
 
-BugsInPy is a benchmark dataset of real bugs collected from open-source Python projects.  
-Each bug includes the buggy version of the code, the fixed version, and tests that reproduce the bug.
+# Key Features
 
----
+Semantic Code Search
+Uses vector embeddings to retrieve semantically similar Python code.
 
-## Dataset Structure
+Reranked Retrieval
+Improves retrieval accuracy using a CrossEncoder neural reranker.
 
-Each bug entry contains metadata describing the buggy and fixed versions of the code.
+LLM-Based Code Repair
+Generates fixes and explanations grounded in retrieved examples.
 
-Example fields:
+Structured Output
+Returns fixes as structured JSON including explanation, patch, and corrected code.
 
-- bug_id  
-- project  
-- python_version  
-- buggy_commit  
-- fixed_commit  
-- test_file  
-- path  
-
-Example record:
-
-```json
-{
-  "bug_id": "pandas_82",
-  "project": "pandas",
-  "buggy_commit": "6f395ad",
-  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
-  "test_file": "pandas/tests/reshape/merge/test_merge.py"
-}
-```
 ---
 
 # System Architecture
 
-The system contains two pipelines:
+CodeFix-RAG consists of two main pipelines:
 
-1. **Offline pipeline** – builds the vector index
-2. **Online pipeline** – retrieves similar code and generates fixes
+1. **Offline pipeline** – builds the vector index from source code  
+2. **Online pipeline** – retrieves similar code and generates bug fixes
 
----
+                OFFLINE PIPELINE
+ ┌─────────────────────────────────────────────┐
+ │                                             │
+ │     Open Source Python Repositories         │
+ │                │                            │
+ │                ▼                            │
+ │        Python Code Parsing                  │
+ │                │                            │
+ │                ▼                            │
+ │        Function Extraction                  │
+ │                │                            │
+ │                ▼                            │
+ │            Code Chunking                    │
+ │                │                            │
+ │                ▼                            │
+ │        Embedding Model (BGE-small)          │
+ │                │                            │
+ │                ▼                            │
+ │           Vector Embeddings                 │
+ │                │                            │
+ │                ▼                            │
+ │            FAISS Index                      │
+ │           + chunks.json                     │
+ │                                             │
+ └─────────────────────────────────────────────┘
 
-# Offline Pipeline (Index Creation)
+                       │
+                       │
+                       ▼
 
-The offline stage processes source code repositories and builds the FAISS index used for retrieval.
+                ONLINE PIPELINE
 
-```
-Source Code Repositories
-        │
-        ▼
-Code Extraction
-(parse Python files)
-        │
-        ▼
-Code Chunking
-(function-level chunks)
-        │
-        ▼
-Embedding Model
-BAAI/bge-small-en
-        │
-        ▼
-Vector Embeddings
-        │
-        ▼
-FAISS Index
-(code.index)
-        │
-        ▼
-Metadata Storage
-(chunks.json)
-```
-
-Artifacts produced:
-
-```
-datasets/index/code.index
-datasets/index/chunks.json
-```
-
-`chunks.json` stores metadata for each code chunk.
-
-Example structure:
-
-```
-{
-  "code": "def foo(): ...",
-  "path": "repo/file.py"
-}
-```
-
----
-
-# Online Pipeline (Bug Detection and Fix)
-
-At runtime the system receives buggy code and performs retrieval + generation.
-
-```
-User Input (Buggy Code)
-        │
-        ▼
-Code Embedding
-BAAI/bge-small-en
-        │
-        ▼
-Vector Search
-FAISS index
-(top-N candidates)
-        │
-        ▼
-Reranking
-CrossEncoder
-(ms-marco-MiniLM-L-6-v2)
-        │
-        ▼
-Top-K Code Examples
-        │
-        ▼
-Prompt Construction
-(context + code)
-        │
-        ▼
-LLM Generation
-(OpenAI GPT-4o-mini)
-        │
-        ▼
-Output
-• Explanation
-• Git Diff Patch
-• Corrected Function
-```
+        Buggy Python Code (User Input)
+                       │
+                       ▼
+               Code Embedding
+                       │
+                       ▼
+                FAISS Retrieval
+                 (Top-N Code)
+                       │
+                       ▼
+             CrossEncoder Reranking
+                       │
+                       ▼
+                Top-K Examples
+                       │
+                       ▼
+               Prompt Construction
+                       │
+                       ▼
+                  LLM Repair
+                 (GPT-4o-mini)
+                       │
+                       ▼
+      Explanation + Diff Patch + Fixed Code
 
 ---
 
 # Retrieval Model
 
-The embedding model converts code into vector representations.
-
-Model used:
+Embedding model used:
 
 ```
 BAAI/bge-small-en
 ```
 
-This model is optimized for semantic retrieval.
+This model converts code into semantic vectors enabling similarity search across codebases.
 
-Query preprocessing improves results:
+Query preprocessing improves retrieval quality:
 
 ```
 query = "Find similar buggy Python code:\n" + query
 ```
-
-This helps the embedding model understand the search intent.
 
 ---
 
@@ -171,15 +123,15 @@ This helps the embedding model understand the search intent.
 
 Vector search is implemented using **FAISS**.
 
-FAISS performs approximate nearest neighbor search in the embedding space.
+FAISS performs approximate nearest neighbor search across high-dimensional embedding spaces.
 
 Steps:
 
-1. embed query code
-2. search nearest vectors
-3. return top-N similar code snippets
+1. Embed query code
+2. Search nearest vectors
+3. Return top-N similar code snippets
 
-Example call:
+Example:
 
 ```
 index.search(query_embedding, top_n)
@@ -191,57 +143,55 @@ index.search(query_embedding, top_n)
 
 Initial vector search may return noisy results.
 
-To improve accuracy the system uses a **CrossEncoder reranker**.
+The system applies a neural **CrossEncoder reranker** to improve ranking accuracy.
 
-Model:
+Model used:
 
 ```
 cross-encoder/ms-marco-MiniLM-L-6-v2
 ```
 
-The reranker evaluates pairs:
+The reranker evaluates:
 
 ```
 (query_code, candidate_code)
 ```
 
-Unlike embeddings, the CrossEncoder processes both inputs jointly and produces a relevance score.
+and assigns a relevance score.
 
 Pipeline:
 
 ```
-FAISS top-50 results
-        │
-        ▼
-CrossEncoder scoring
-        │
-        ▼
-Sorted results
-        │
-        ▼
-Top-5 candidates
+FAISS Top-50
+      │
+      ▼
+CrossEncoder Scoring
+      │
+      ▼
+Sorted Results
+      │
+      ▼
+Top-5 Context Snippets
 ```
-
-This improves the quality of the context provided to the LLM.
 
 ---
 
 # LLM Generation
 
-The final stage uses an LLM to analyze the code and generate a fix.
+The final stage uses an LLM to generate the bug explanation and fix.
 
-Model used:
+Model:
 
 ```
 GPT-4o-mini
 ```
 
-The LLM receives:
+The model receives:
 
 * buggy code
-* retrieved code examples
+* retrieved code snippets
 
-The model outputs structured JSON:
+Output format:
 
 ```
 {
@@ -259,7 +209,7 @@ Explanation
 The bug occurs because the code accesses a list index that may be out of range.
 ```
 
-Git Diff Patch
+Diff patch
 
 ```
 --- original.py
@@ -272,7 +222,7 @@ Git Diff Patch
 +    return lst[index]
 ```
 
-Corrected Function
+Corrected function
 
 ```
 def get_item(lst, index):
@@ -283,21 +233,45 @@ def get_item(lst, index):
 
 ---
 
+# Dataset: BugsInPy
+
+BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
+
+Each bug includes:
+
+* buggy version of the code
+* fixed version
+* tests that reproduce the bug
+
+Example metadata entry:
+
+```
+{
+  "bug_id": "pandas_82",
+  "project": "pandas",
+  "buggy_commit": "6f395ad",
+  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
+  "test_file": "pandas/tests/reshape/merge/test_merge.py"
+}
+```
+
+---
+
 # Running the System
 
-Activate environment:
+Install dependencies:
 
 ```
 pip install -r requirements.txt
 ```
 
-Run:
+Run the system:
 
 ```
 python -m generate.generate_fix
 ```
 
-Paste buggy code and finish with:
+Paste buggy Python code and terminate input with:
 
 ```
 END
@@ -316,224 +290,56 @@ END
 
 ---
 
-# Input Handling Issue (Windows CMD)
-
-While developing the system several input issues occurred.
-
-### Problem 1
-
-Using only `Enter` to finish input caused **partial code capture** in Windows CMD.
-
-The input loop stopped early and truncated the code snippet.
-
-### Problem 2
-
-Using
-
-```
-Ctrl + Z
-```
-
-to terminate input did not behave reliably in CMD.
-
-Sometimes the process stalled waiting for EOF.
-
-### Final Solution
-
-A custom termination token was implemented:
-
-```
-END
-```
-
-Input example:
-
-```
-def foo():
-    return 1
-END
-```
-
-This approach proved stable across Windows terminals.
-
----
-
-# Key Design Decisions
-
-### Why Retrieval Augmentation
-
-LLMs alone may hallucinate fixes.
-
-Retrieval provides:
-
-* real code examples
-* grounding
-* better repair suggestions
-
-### Why FAISS
-
-FAISS provides fast similarity search for large code corpora.
-
-### Why Reranking
-
-Vector search retrieves semantically similar code but may include noise.
-
-The CrossEncoder reranker improves ranking accuracy.
-
-### Why Structured JSON Output
-
-Returning strict JSON allows reliable parsing and downstream automation.
-
----
-# Example Input / Output
-
-## Example Run
-
-```bash
-python -m generate.generate_fix
-```
-
-## Input
-
-The user pastes buggy Python code and finishes with `END`.
-
-```
-Paste buggy code. Type END on a new line when finished:
-
-def get_item(lst, index):
-    return lst[index]
-
-data = [1,2,3]
-print(get_item(data, 10))
-END
-```
-
----
-
-# System Processing
-
-The system loads the retrieval and reranking components:
-
-```
-Loading embedding model...
-Loading FAISS index...
-Loading reranker model...
-```
-
-It then retrieves similar code snippets from the indexed repositories.
-
----
-
-# Retrieved Code Examples
-
-```
-Top retrieved code snippets:
-
-[1] File: unknown_file.py  score=4.149101257324219
-
-File: datasets/repos/scrapy/scrapy/commands/parse.py
-Object: print_items
-Type: FunctionDef
-
-    def print_items(self, lvl: int | None = None, colour: bool = True) -> None:
-        if lvl is None:
-            items = [item for lst in self.items.values() for item in lst]
-        else:
-```
-
-```
-[2] File: unknown_file.py  score=2.5646955966949463
-
-d.addCallback(self.iterate_spider_output)
-return d
-if inspect.iscoroutine(result):
-    d = deferred_from_coro(result)
-```
-
-```
-[3] File: unknown_file.py  score=0.8291720747947693
-
-def get_help(self) -> str:
-    b = []
-    b.append("Available Scrapy objects:")
-```
-
-The retrieved examples are used as context for the LLM.
-
----
-
-# Model Output
-
-## Explanation
-
-```
-The bug in the provided code occurs when an invalid index is accessed in the list,
-which raises an IndexError. This can be fixed by adding error handling to manage
-out-of-bounds index access.
-```
-
----
-
-# Git Diff Patch
-
-```diff
---- original.py
-+++ fixed.py
-@@ -1,3 +1,7 @@
- def get_item(lst, index):
--    return lst[index]
-+    try:
-+        return lst[index]
-+    except IndexError:
-+        return None
-```
-
----
-
-# Corrected Function
-
-```python
-def get_item(lst, index):
-    try:
-        return lst[index]
-    except IndexError:
-        return None
-```
-
 # Project Structure
 
 ```
 codefix-rag
 │
-├── datasets                              # Data used for building the retrieval index
-│   │
-│   ├── raw/BugsInPy                      # Raw BugsInPy dataset containing real bug metadata
-│   │   ├── framework                     # BugsInPy framework utilities
-│   │   └── projects                      # Buggy project versions used in BugsInPy
-│   │
-│   ├── processed                         # Processed dataset derived from BugsInPy
-│   │
-│   └── repos                             # Cloned open-source repositories used for code retrieval
-│       ├── fastapi                       # FastAPI source code
-│       ├── luigi                         # Luigi workflow library source code
-│       ├── scrapy                        # Scrapy web scraping framework source code
-│       ├── thefuck                       # TheFuck command correction tool source code
-│       └── tqdm                          # tqdm progress bar library source code
+├── datasets                       # Data used for retrieval index
+│   ├── raw/BugsInPy               # BugsInPy dataset
+│   ├── processed                  # Processed dataset metadata
+│   └── repos                      # Cloned Python repositories
 │
-├── ingest                                # Data ingestion scripts
-│   └── ingest_bugsinpy.py                # Parses BugsInPy dataset and prepares processed metadata
+├── ingest
+│   └── ingest_bugsinpy.py         # Processes BugsInPy metadata
 │
-├── retrieve                              # Retrieval system implementation
-│   ├── build_index.py                    # Builds FAISS index from repository code embeddings
-│   └── retrieve_similar_code.py          # Performs semantic retrieval and neural reranking
+├── retrieve
+│   ├── build_index.py             # Builds FAISS vector index
+│   └── retrieve_similar_code.py   # Retrieval and reranking pipeline
 │
-├── generate                              # Online generation pipeline
-│   └── generate_fix.py                   # Retrieves similar code and generates bug fix using LLM
+├── generate
+│   └── generate_fix.py            # Online bug fixing pipeline
 │
-├── .env                                  # Environment variables (API keys)
-├── requirements.txt                      # Python dependencies for the project
-├── Dockerfile                            # Container configuration for running the system
-├── update_readme.sh                      # Utility script for updating README automatically
-├── .gitignore                            # Git ignored files configuration
-└── README.md                             # Project documentation
+├── requirements.txt
+├── Dockerfile
+└── README.md
 ```
+
+---
+
+# Design Choices
+
+Retrieval-Augmented Generation
+Reduces hallucinations by grounding the LLM in real code examples.
+
+Vector Search with FAISS
+Enables scalable semantic search across large codebases.
+
+Neural Reranking
+Improves relevance of retrieved code snippets.
+
+Structured JSON Output
+Ensures reliable parsing and downstream automation.
+
+---
+
+# Future Improvements
+
+Possible extensions:
+
+* AST-based bug detection
+* hybrid retrieval (BM25 + vector search)
+* indexing buggy/fixed code pairs
+* training embeddings specifically for code repair
+
+---
