@@ -123,13 +123,13 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
     for i, r in enumerate(results):
 
-        path = r.get("path", "unknown_file.py")
+        #path = r.get("path", "unknown_file.py")
         score = r.get("rerank_score", "?")
         code = r.get("code", "")
 
         snippet = code[:300]
 
-        print(f"\n[{i+1}] File: {path}  score={score}\n")
+        print(f"\n[{i+1}] score={score}\n")
         print(snippet)
         print("\n" + "-" * 60)
 
