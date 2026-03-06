@@ -93,17 +93,24 @@ def collect_code(repo_path):
                     docstring = ast.get_docstring(node) or ""
 
                     metadata = f"""
-File: {py_file}
-Object: {node.name}
-Type: {type(node).__name__}
-Docstring: {docstring}
-"""
+                    File: {py_file}
+                    Object: {node.name}
+                    Type: {type(node).__name__}
+                    Docstring: {docstring}
+                    """
 
                     full_chunk = metadata + "\n" + code
 
                     split_chunks = split_large_chunk(full_chunk)
 
-                    code_chunks.extend(split_chunks)
+                    for chunk in split_chunks:
+
+                        code_chunks.append({
+                            "code": chunk,
+                            "path": str(py_file),
+                            "object": node.name,
+                            "type": type(node).__name__
+                        })
 
         except Exception:
             continue
@@ -128,8 +135,10 @@ def build_index(chunks):
 
     print("Creating embeddings")
 
+    texts = [c["code"] for c in chunks]
+
     embeddings = model.encode(
-        chunks,
+        texts,
         batch_size=128,
         show_progress_bar=True,
         convert_to_numpy=True,

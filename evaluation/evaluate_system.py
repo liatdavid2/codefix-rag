@@ -1,127 +1,80 @@
 import json
-import ast
-import statistics
-from difflib import SequenceMatcher
+import os
 
-from generate.generate_fix import generate_answer
-from evaluation.get_ground_truth import get_fix_patch
-from pathlib import Path
-
+from retrieve.retrieve_similar_code import retrieve_candidates, rerank
 
 DATASET = "datasets/processed/bugs_dataset.json"
 
-
-def is_valid_python(code: str) -> bool:
-    try:
-        ast.parse(code)
-        return True
-    except Exception:
-        return False
+TOP_K = 5
 
 
-def similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, a, b).ratio()
+def recall_at_k(retrieved_files, target_module):
+
+    for f in retrieved_files:
+
+        filename = os.path.basename(f)
+        filename = filename.replace(".py", "")
+
+        if target_module in filename:
+            return 1
+
+    return 0
 
 
 def evaluate():
 
     with open(DATASET, "r", encoding="utf8") as f:
-        dataset = json.load(f)
+        bugs = json.load(f)
 
-    total_samples = 0
-    fixes_generated = 0
-    syntax_valid = 0
-    correct_fix = 0
+    total = 0
+    correct = 0
 
-    similarities = []
-    rerank_scores = []
+    for bug in bugs:
 
-    for sample in dataset[:20]:
+        query = bug["test_file"]
 
-        bug_id = sample.get("bug_id")
+        # Step 1: retrieve candidates
+        candidates = retrieve_candidates(query, top_n=50)
 
-        repo_path = Path("datasets/repos") / sample["project"]
+        # Step 2: rerank
+        results = rerank(query, candidates, k=TOP_K)
 
-        ground_truth = get_fix_patch(
-            repo_path,
-            sample["buggy_commit"],
-            sample["fixed_commit"]
-        )
+        retrieved_files = []
 
+        for r in results:
 
-        print("\n" + "=" * 80)
-        print(f"BUG ID: {bug_id}")
+            path = r.get("path", "")
 
-        try:
+            if path:
+                retrieved_files.append(path)
 
-            result = generate_answer(bug_id)
+        target = bug["test_file"]
 
-            generated_fix = result.get("corrected_function", "")
-            rerank_score = result.get("rerank_score")
+        # convert test file -> module
+        target_module = os.path.basename(target)
+        target_module = target_module.replace("test_", "")
+        target_module = target_module.replace(".py", "")
 
-            total_samples += 1
+        score = recall_at_k(retrieved_files, target_module)
 
-            if generated_fix:
-                fixes_generated += 1
+        total += 1
+        correct += score
 
-                if is_valid_python(generated_fix):
-                    syntax_valid += 1
+        print("Bug:", bug["bug_id"])
+        print("Target:", target)
+        print("Target module:", target_module)
+        print("Retrieved:", retrieved_files)
+        print("Hit:", score)
+        print("-" * 50)
 
-            if rerank_score is not None:
-                rerank_scores.append(rerank_score)
+    recall = correct / total if total else 0
 
-            sim = similarity(generated_fix, ground_truth) if ground_truth else 0
-            similarities.append(sim)
-
-            if sim > 0.8:
-                correct_fix += 1
-
-            print("\nGenerated Fix:\n")
-            print(generated_fix)
-
-            print("\nGround Truth:\n")
-            print(ground_truth)
-
-            print("\nSimilarity:", round(sim, 3))
-
-            if sim > 0.8:
-                print("MATCH: True")
-            else:
-                print("MATCH: False")
-
-        except Exception as e:
-
-            total_samples += 1
-            print("ERROR:", e)
-
-    metrics = {
-
-        "total_samples": total_samples,
-
-        "fix_generation_rate":
-            fixes_generated / total_samples if total_samples else 0,
-
-        "syntax_valid_rate":
-            syntax_valid / total_samples if total_samples else 0,
-
-        "fix_accuracy":
-            correct_fix / total_samples if total_samples else 0,
-
-        "average_similarity":
-            statistics.mean(similarities) if similarities else 0,
-
-        "average_rerank_score":
-            statistics.mean(rerank_scores) if rerank_scores else None
-    }
-
-    print("\n" + "=" * 80)
-    print("FINAL METRICS")
-    print("=" * 80)
-
-    for k, v in metrics.items():
-        print(f"{k}: {v}")
-
-    return metrics
+    print()
+    print("Evaluation Results")
+    print("------------------")
+    print("Total bugs:", total)
+    print("Correct retrieval:", correct)
+    print("Recall@5:", round(recall, 3))
 
 
 if __name__ == "__main__":

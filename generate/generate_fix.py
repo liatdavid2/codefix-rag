@@ -151,24 +151,24 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
     for i, r in enumerate(results):
 
-        #path = r.get("path", "unknown_file.py")
+        path = r.get("path", "unknown_file.py")
         score = r.get("rerank_score", "?")
         code = r.get("code", "")
 
         snippet = code[:300]
 
-        print(f"\n[{i+1}] rerank_score={score}\n")
+        print(f"\n[{i+1}] rerank_score={score}  file={path}\n")
         print(snippet)
         print("\n" + "-" * 60)
 
     code_chunks = [
         f"""
-        File: {r.get("path")}
-        Object: {r.get("object")}
-        Type: {r.get("type")}
+    File: {r.get("path","unknown_file.py")}
+    Object: {r.get("object","unknown")}
+    Type: {r.get("type","unknown")}
 
-        {r.get("code")}
-        """[:800]
+    {r.get("code","")}
+    """[:800]
         for r in results
     ]
 
@@ -182,7 +182,14 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
     raw = (response.choices[0].message.content or "").strip()
 
-    return _safe_parse_json(raw)
+    parsed = _safe_parse_json(raw)
+
+    if results:
+        parsed["rerank_score"] = results[0].get("rerank_score", 0.0)
+    else:
+        parsed["rerank_score"] = 0.0
+
+    return parsed
 
 
 def main():
