@@ -17,17 +17,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def read_code_input() -> str:
     """
     Read multiline code snippet from the user.
-    User finishes input with an empty line.
+    Finish input by typing END on a new line.
     """
 
-    print("Paste buggy code. Finish with empty line:\n")
+    print("Paste buggy code. Type END on a new line when finished:\n")
 
     lines = []
 
     while True:
         line = input()
 
-        if line.strip() == "":
+        if line.strip() == "END":
             break
 
         lines.append(line)
