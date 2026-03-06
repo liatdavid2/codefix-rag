@@ -77,6 +77,7 @@ Return ONLY valid JSON (no markdown, no extra text) with the following schema:
 
 Rules:
 - Keep the original function signature.
+- Only modify the function body, do not modify code outside the function.
 - Diff must be unified diff format (starts with --- / +++ and @@ hunks).
 - corrected_function must be a single Python function definition.
 """
@@ -115,9 +116,17 @@ def _safe_parse_json(text: str) -> dict:
 
 def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
-    candidates = retrieve_candidates(query, top_n=top_n)
+    query_text = f"""
+        Python bug fix
 
-    results = rerank(query, candidates, k=top_k)
+        Buggy code:
+        {query}
+
+        Find the bug and suggest a fix.
+        """
+    candidates = retrieve_candidates(query_text, top_n=top_n)
+
+    results = rerank(query_text, candidates, k=top_k)
 
     print("\nTop retrieved code snippets:\n")
 
@@ -129,11 +138,11 @@ def generate_answer(query: str, top_n: int = 50, top_k: int = 3) -> dict:
 
         snippet = code[:300]
 
-        print(f"\n[{i+1}] score={score}\n")
+        print(f"\n[{i+1}] rerank_score={score}\n")
         print(snippet)
         print("\n" + "-" * 60)
 
-    code_chunks = [r.get("code", "")[:1200] for r in results]
+    code_chunks = [r.get("code", "")[:800] for r in results]
 
     prompt = build_prompt(query, code_chunks)
 
