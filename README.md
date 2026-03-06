@@ -687,3 +687,10 @@ return method()
 ```
 Logging helps track the full RAG pipeline execution.
 This enables easier debugging, monitoring, and auditing of system behavior.
+
+#### 3. Rate Limiting (Token Bucket) – Planned
+
+To protect the LLM service from excessive traffic or abuse, the system will include a **Token Bucket rate limiter**.  
+This mechanism limits the number of requests that can be processed within a given time window.
+
+**Status:** Not implemented yet (planned improvement).
