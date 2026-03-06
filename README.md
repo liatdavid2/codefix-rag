@@ -1,4 +1,4 @@
-# CodeFix-RAG: Retrieval-Augmented Bug Fixing for Python
+# The project: CodeFix-RAG – Retrieval-Augmented Bug Fixing for Python
 
 This project implements a **Code RAG system** that detects and fixes bugs in Python code using:
 
