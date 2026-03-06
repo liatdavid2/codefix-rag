@@ -6,7 +6,7 @@ import random
 
 RAW_DATA = "datasets/raw/BugsInPy"
 OUTPUT_DATA = "datasets/processed/bugs_dataset.json"
-
+TARGET_PROJECT = "scrapy"
 
 def download_dataset():
 
@@ -58,6 +58,9 @@ def collect_bug_examples():
         if not project.is_dir():
             continue
 
+        if project.name != TARGET_PROJECT:
+            continue
+        
         bugs_dir = project / "bugs"
 
         if not bugs_dir.exists():
