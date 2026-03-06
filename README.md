@@ -738,46 +738,61 @@ Example record:
 ```
 {"timestamp": "2026-03-06T14:14:35.978564", "buggy_code": "...", "generated_fix": "...", "explanation": "..."}
 ```
+
 ---
 
-## Evaluation
 
-The retrieval pipeline is evaluated using bugs from the **BugsInPy dataset**.
-For each bug, the system attempts to retrieve the relevant source module from the repository that is related to the failing test.
+## Retrieval Evaluation
 
-### Evaluation Process
+The retrieval stage measures how often the system retrieves code from the correct module that contains the fix.
 
-For every bug in the dataset:
+Metric used:
 
-1. The system takes the **test file path** as the query.
-2. The query is used to retrieve candidate code snippets from the **FAISS index of repository code**.
-3. The retrieved candidates are **reranked using a CrossEncoder (`ms-marco-MiniLM-L-6-v2`)**.
-4. The system checks whether the **correct source module appears in the top-K retrieved files**.
+* **Recall@K** — whether the correct module appears in the top-K retrieved results.
 
-### Metric
-
-We report **Recall@K**, which measures how often the correct module appears within the top K retrieved results.
-
-```
-Recall@K = correct retrievals / total bugs
-```
-
-### Example Output
-
-```
-Bug: scrapy_24
-Target module: downloader_handlers
-Retrieved: [...handlers/base.py, ...handlers/__init__.py]
-Hit: 1
-```
-
-### Results
+Results:
 
 ```
 Total bugs: 20
-Correct retrieval: 18
-Recall@5: 0.90
+
+K     Recall
+@1    0.600
+@5    0.900
+@10   0.950
 ```
 
-This means that the system retrieves the correct module within the **top-5 results in 90% of the cases**, providing relevant context for the LLM to generate a fix.
+Interpretation:
+
+* In **60%** of the cases the correct module is retrieved as the **top result**.
+* In **90%** of the cases the correct module appears in the **top 5 results**.
+* In **95%** of the cases it appears in the **top 10 results**.
+
+This shows that the **vector search + reranking pipeline successfully retrieves relevant code context** for most bugs.
+
+---
+
+## Generation Evaluation
+
+The generation stage evaluates the quality of the fixes produced by the LLM.
+
+Metrics used:
+
+* **Syntax validity** – whether the generated patch compiles as valid Python.
+* **Lint pass rate** – whether the patch passes static code checks.
+* **Patch similarity** – similarity between the generated patch and the ground-truth fix.
+
+Results:
+
+```
+Syntax validity: 0.900
+Lint pass rate: 0.100
+Patch similarity: 0.015
+```
+
+Interpretation:
+
+* **90%** of generated fixes produce syntactically valid Python code.
+* **10%** pass linting rules (flake8).
+* Patch similarity is low because LLM-generated fixes may differ structurally from the original developer patch while still addressing the bug.
+
 ---
