@@ -796,3 +796,16 @@ Interpretation:
 * Patch similarity is low because LLM-generated fixes may differ structurally from the original developer patch while still addressing the bug.
 
 ---
+
+## Validation
+
+Before returning the generated fix, the system validates the LLM output to ensure the code is correct and safe.
+
+The validation pipeline includes:
+
+1. **Syntax validation** – checks that the code is valid Python using `ast.parse`.
+2. **Compilation check** – verifies the code compiles using `py_compile`.
+3. **Static analysis** – runs `ruff` to detect style or code issues.
+4. **Confidence score** – combines the reranker score with validation results.
+
+This step prevents invalid code from being returned and improves the reliability of the generated fixes.
