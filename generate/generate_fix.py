@@ -8,6 +8,7 @@ from openai import OpenAI
 
 from retrieve.retrieve_similar_code import retrieve_candidates, rerank
 from validation.validate_patch import validate_fix
+from safety.input_validation import validate_query
 
 
 load_dotenv()
@@ -190,6 +191,9 @@ def main():
     if not code_snippet:
         print("Code snippet is required.")
         return
+
+    # Safety validation
+    code_snippet = validate_query(code_snippet)
 
     result = generate_answer(code_snippet)
 
