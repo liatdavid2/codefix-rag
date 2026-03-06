@@ -21,7 +21,9 @@ def get_patch(repo_path, buggy_commit, fixed_commit):
     result = subprocess.run(
         cmd,
         capture_output=True,
-        text=True
+        text=True,
+        encoding="utf-8",
+        errors="ignore"
     )
 
     return result.stdout
