@@ -18,9 +18,6 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * corrected function
 
 ---
-Below is a **clean English version suitable for a README**. I kept it professional and structured so it looks good in a portfolio project.
-
----
 
 # What Happens in the Pipeline
 
