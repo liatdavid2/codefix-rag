@@ -160,36 +160,6 @@ Meaning:
 
 ---
 
-# Why `lint_ok = False`
-
-This likely happens due to **PEP8 formatting issues**.
-
-Example:
-
-```python
-data = [1,2,3]
-```
-
-PEP8 formatting recommends:
-
-```python
-data = [1, 2, 3]
-```
-
-Another possible reason:
-
-```python
-raise IndexError('Index out of range')
-```
-
-However, these are **style issues only** and do not affect functionality.
-
----
-
-If you want, I can also give you a **very strong README section called "System Architecture" with a diagram** that will make this project look much more impressive in interviews.
-
----
-
 # Key Features
 
 Semantic Code Search
