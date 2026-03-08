@@ -62,6 +62,114 @@ codefix-rag
 └── .env
 ```
 ---
+# System Architecture
+
+CodeFix-RAG follows a modular LLM application pipeline:
+
+```
+Ingest → Retrieve → Reason → Validate → Surface → Learn
+```
+
+The system is organized into two main pipelines: **offline indexing** and **online bug fixing**.
+
+---
+
+## Offline Pipeline (Index Construction)
+
+The offline pipeline prepares the code retrieval index from open-source repositories.
+
+```
+Open Source Python Repositories
+            |
+            v
+          Ingest
+     (parse BugsInPy metadata)
+            |
+            v
+     Python Code Parsing
+            |
+            v
+     Function Extraction
+            |
+            v
+        Code Chunking
+            |
+            v
+   Embedding Model (BGE-small)
+            |
+            v
+      Vector Embeddings
+            |
+            v
+        FAISS Index
+     (stored in datasets/index)
+```
+
+This stage runs once to build the vector index used for semantic code retrieval.
+
+---
+
+## Online Pipeline (Bug Fix Generation)
+
+The online pipeline processes user input and generates candidate fixes.
+
+```
+Buggy Python Code (User Input)
+            |
+            v
+           Safety
+   (input validation checks)
+            |
+            v
+          Retrieve
+      FAISS Vector Search
+            |
+            v
+     CrossEncoder Reranker
+            |
+            v
+        Top-K Code Context
+            |
+            v
+           Reason
+      LLM Fix Generation
+        (GPT-4o-mini)
+            |
+            v
+          Validate
+   Syntax / Compile / Lint
+            |
+            v
+           Surface
+   Explanation + Patch + Logs
+            |
+            v
+            Learn
+ Store Bug–Fix Pairs for Feedback
+```
+
+---
+
+## Evaluation
+
+System performance is measured separately using the evaluation module.
+
+The evaluation pipeline measures:
+
+* **Retrieval quality** (Recall@K)
+* **Syntax validity**
+* **Lint pass rate**
+* **Patch similarity**
+
+Evaluation scripts are located in:
+
+```
+evaluation/evaluate_system.py
+```
+
+This benchmarking stage helps quantify improvements to the retrieval and generation components.
+
+---
 # What Happens in the Pipeline
 
 ## 1. User Input
@@ -217,67 +325,6 @@ Generates fixes and explanations grounded in retrieved examples.
 Structured Output
 Returns fixes as structured JSON including explanation, patch, and corrected code.
 
----
-
-# System Architecture
-
-CodeFix-RAG consists of two main pipelines:
-
-1. **Offline pipeline** – builds the vector index from source code  
-2. **Online pipeline** – retrieves similar code and generates bug fixes
-
-```
-OFFLINE PIPELINE
-
-Open Source Python Repositories
-            |
-            v
-      Python Code Parsing
-            |
-            v
-      Function Extraction
-            |
-            v
-         Code Chunking
-            |
-            v
-   Embedding Model (BGE-small)
-            |
-            v
-       Vector Embeddings
-            |
-            v
-          FAISS Index
-         + chunks.json
-
-
-
-ONLINE PIPELINE
-
-Buggy Python Code (User Input)
-            |
-            v
-        Code Embedding
-            |
-            v
-        FAISS Retrieval
-        (Top-N Results)
-            |
-            v
-     CrossEncoder Reranker
-            |
-            v
-       Top-K Code Snippets
-            |
-            v
-        Prompt Builder
-            |
-            v
-        LLM (GPT-4o-mini)
-            |
-            v
-   Explanation + Diff Patch + Fix
-```
 ---
 
 # Retrieval Model
