@@ -179,7 +179,6 @@ Evaluation scripts are located in:
 ```
 evaluation/evaluate_system.py
 ```
-This benchmarking stage helps quantify improvements to the retrieval and generation components.
 ---
 
 # What Happens in the Pipeline
