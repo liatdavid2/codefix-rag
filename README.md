@@ -17,6 +17,28 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * Git diff patch
 * corrected function
 ---
+# Dataset: BugsInPy
+
+BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
+
+Each bug includes:
+
+* buggy version of the code
+* fixed version
+* tests that reproduce the bug
+
+Example metadata entry:
+
+```
+{
+  "bug_id": "pandas_82",
+  "project": "pandas",
+  "buggy_commit": "6f395ad",
+  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
+  "test_file": "pandas/tests/reshape/merge/test_merge.py"
+}
+```
+---
 # Project Structure
 
 ```
@@ -447,190 +469,7 @@ Example record:
 ```
 {"timestamp": "2026-03-06T14:14:35.978564", "buggy_code": "...", "generated_fix": "...", "explanation": "..."}
 ```
-
 ---
-
-
-
-
-
-
-
-
-
-
-# Key Features
-
-Semantic Code Search
-Uses vector embeddings to retrieve semantically similar Python code.
-
-Reranked Retrieval
-Improves retrieval accuracy using a CrossEncoder neural reranker.
-
-LLM-Based Code Repair
-Generates fixes and explanations grounded in retrieved examples.
-
-Structured Output
-Returns fixes as structured JSON including explanation, patch, and corrected code.
-
----
-
-# Retrieval Model
-
-Embedding model used:
-
-```
-BAAI/bge-small-en
-```
-
-This model converts code into semantic vectors enabling similarity search across codebases.
-
-Query preprocessing improves retrieval quality:
-
-```
-query = "Find similar buggy Python code:\n" + query
-```
-
----
-
-# Vector Search
-
-Vector search is implemented using **FAISS**.
-
-FAISS performs approximate nearest neighbor search across high-dimensional embedding spaces.
-
-Steps:
-
-1. Embed query code
-2. Search nearest vectors
-3. Return top-N similar code snippets
-
-Example:
-
-```
-index.search(query_embedding, top_n)
-```
-
----
-
-# Reranking
-
-Initial vector search may return noisy results.
-
-The system applies a neural **CrossEncoder reranker** to improve ranking accuracy.
-
-Model used:
-
-```
-cross-encoder/ms-marco-MiniLM-L-6-v2
-```
-
-The reranker evaluates:
-
-```
-(query_code, candidate_code)
-```
-
-and assigns a relevance score.
-
-Pipeline:
-
-```
-FAISS Top-50
-      │
-      ▼
-CrossEncoder Scoring
-      │
-      ▼
-Sorted Results
-      │
-      ▼
-Top-5 Context Snippets
-```
-
----
-
-# LLM Generation
-
-The final stage uses an LLM to generate the bug explanation and fix.
-
-Model:
-
-```
-GPT-4o-mini
-```
-
-The model receives:
-
-* buggy code
-* retrieved code snippets
-
-Output format:
-
-```
-{
-  "explanation": "...",
-  "diff": "...",
-  "corrected_function": "..."
-}
-```
-
-Example output:
-
-Explanation
-
-```
-The bug occurs because the code accesses a list index that may be out of range.
-```
-
-Diff patch
-
-```
---- original.py
-+++ fixed.py
-@@ -1,3 +1,7 @@
- def get_item(lst, index):
--    return lst[index]
-+    if index < 0 or index >= len(lst):
-+        raise IndexError("Index out of bounds")
-+    return lst[index]
-```
-
-Corrected function
-
-```
-def get_item(lst, index):
-    if index < 0 or index >= len(lst):
-        raise IndexError("Index out of bounds")
-    return lst[index]
-```
-
----
-
-# Dataset: BugsInPy
-
-BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
-
-Each bug includes:
-
-* buggy version of the code
-* fixed version
-* tests that reproduce the bug
-
-Example metadata entry:
-
-```
-{
-  "bug_id": "pandas_82",
-  "project": "pandas",
-  "buggy_commit": "6f395ad",
-  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
-  "test_file": "pandas/tests/reshape/merge/test_merge.py"
-}
-```
-
----
-
 # Running the System
 
 Install dependencies:
@@ -663,124 +502,6 @@ END
 ```
 
 ---
-
-# Design Choices
-
-Retrieval-Augmented Generation
-Reduces hallucinations by grounding the LLM in real code examples.
-
-Vector Search with FAISS
-Enables scalable semantic search across large codebases.
-
-Neural Reranking
-Improves relevance of retrieved code snippets.
-
-Structured JSON Output
-Ensures reliable parsing and downstream automation.
-
----
-
-## Example: Bug Fix Generation
-
-Below is an example of running the system on a small Python bug.
-
-### Input
-
-User provides buggy code:
-
-```python
-def call_method(obj, name):
-    method = getattr(obj, name)
-    return method()
-
-print(call_method({}, "run"))
-```
-
-This code raises an error because the object (`dict`) does not have a method named `"run"`.
-
----
-
-### Retrieval Stage
-
-The system retrieves similar code patterns from the indexed repository.
-
-Top retrieved snippets:
-
-```
-File: scrapy/utils/request.py
-Object: _get_method
-
-def _get_method(obj: Any, name: Any) -> Any:
-    name = str(name)
-    try:
-        return getattr(obj, name)
-```
-
-This example contains a similar pattern using `getattr`, which helps the model understand how attribute access is handled in real code.
-
----
-
-### Generated Explanation
-
-```
-The bug occurs because the method being called may not exist on the given object,
-leading to an AttributeError. The code should check if the method exists before
-attempting to call it.
-```
-
----
-
-### Generated Patch
-
-```diff
---- original.py
-+++ corrected.py
-@@
- def call_method(obj, name):
--    method = getattr(obj, name)
--    return method()
-+    if hasattr(obj, name):
-+        return getattr(obj, name)()
-+    raise ValueError(f'Method {name!r} not found in: {obj}')
-```
-
----
-
-### Corrected Function
-
-```python
-def call_method(obj, name):
-    if hasattr(obj, name):
-        return getattr(obj, name)()
-    raise ValueError(f'Method {name!r} not found in: {obj}')
-```
-
----
-
-### Validation
-
-The generated patch is validated automatically:
-
-```
-{
-  "syntax_ok": True,
-  "compile_ok": True,
-  "lint_ok": False,
-  "confidence": 0.4
-}
-```
-
-Validation checks include:
-
-* syntax validation
-* compilation check
-* lint analysis
-* confidence estimation based on retrieval score
-
----
-
-
-
 
 ## Retrieval Evaluation
 
@@ -835,17 +556,4 @@ Interpretation:
 * **10%** pass linting rules (flake8).
 * Patch similarity is low because LLM-generated fixes may differ structurally from the original developer patch while still addressing the bug.
 
----
 
-## Validation
-
-Before returning the generated fix, the system validates the LLM output to ensure the code is correct and safe.
-
-The validation pipeline includes:
-
-1. **Syntax validation** – checks that the code is valid Python using `ast.parse`.
-2. **Compilation check** – verifies the code compiles using `py_compile`.
-3. **Static analysis** – runs `ruff` to detect style or code issues.
-4. **Confidence score** – combines the reranker score with validation results.
-
-This step prevents invalid code from being returned and improves the reliability of the generated fixes.
