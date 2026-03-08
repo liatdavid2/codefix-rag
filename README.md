@@ -338,6 +338,7 @@ score = 0.82
 ```
 
 Higher scores indicate more relevant code context.
+
 ---
 ## 5. Reason
 
