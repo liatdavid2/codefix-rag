@@ -9,7 +9,19 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * bug explanation
 * Git diff patch
 * corrected function
+
 ---
+
+## Key Components
+
+Retrieval: FAISS + BGE embeddings  
+Reranking: CrossEncoder (ms-marco-MiniLM)  
+Generation: GPT-4o-mini  
+Dataset: BugsInPy  
+Validation: AST + compile + lint
+
+---
+
 # Dataset: BugsInPy
 
 BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
