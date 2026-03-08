@@ -22,28 +22,6 @@ Validation: AST + compile + lint
 
 ---
 
-# Dataset: BugsInPy
-
-BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
-
-Each bug includes:
-
-* buggy version of the code
-* fixed version
-* tests that reproduce the bug
-
-Example metadata entry:
-
-```
-{
-  "bug_id": "pandas_82",
-  "project": "pandas",
-  "buggy_commit": "6f395ad",
-  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
-  "test_file": "pandas/tests/reshape/merge/test_merge.py"
-}
-```
----
 # System Architecture
 
 CodeFix-RAG follows a modular LLM application pipeline:
@@ -128,6 +106,30 @@ Buggy Python Code (User Input)
             v
             Learn
  Store Bug–Fix Pairs for Feedback
+```
+
+---
+
+# Dataset: BugsInPy
+
+BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
+
+Each bug includes:
+
+* buggy version of the code
+* fixed version
+* tests that reproduce the bug
+
+Example metadata entry:
+
+```
+{
+  "bug_id": "pandas_82",
+  "project": "pandas",
+  "buggy_commit": "6f395ad",
+  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
+  "test_file": "pandas/tests/reshape/merge/test_merge.py"
+}
 ```
 
 ---
