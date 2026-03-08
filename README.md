@@ -487,6 +487,7 @@ python -m evaluation.evaluate_system
 ```
 
 Evaluates retrieval and generation performance using the benchmark dataset.
+
 ---
 
 ## Retrieval Evaluation
