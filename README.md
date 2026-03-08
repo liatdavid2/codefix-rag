@@ -567,7 +567,7 @@ Interpretation:
 * **Bug-fix datasets** – Use datasets like BugsInPy to improve generation.
 * **Instruction tuning** – Train models to produce smaller and cleaner patches.
 
-## MVP Scope
+## Current MVP
 
 * **Local CLI system** – The current implementation runs as a local command-line tool.
 * **Offline index build** – Repositories are indexed once before retrieval.
