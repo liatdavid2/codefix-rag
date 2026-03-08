@@ -16,9 +16,52 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * bug explanation
 * Git diff patch
 * corrected function
-
 ---
+# Project Structure
 
+```
+codefix-rag
+│
+├── datasets
+│   ├── raw/                      # Raw BugsInPy dataset
+│   ├── processed/                # Processed bug metadata
+│   ├── repos/                    # Cloned Python repositories
+│   ├── index/                    # FAISS vector index files
+│   └── learn/                    # Stored bug–fix feedback data
+│
+├── ingest
+│   └── ingest_bugsinpy.py        # Loads and prepares BugsInPy data
+│
+├── retrieve
+│   ├── build_index.py            # Builds FAISS vector index
+│   └── retrieve_similar_code.py  # Retrieves and reranks relevant code
+│
+├── reason
+│   └── generate_fix.py           # LLM-based bug fix generation
+│
+├── validation
+│   └── validate_patch.py         # Syntax, compile and lint validation
+│
+├── safety
+│   └── input_validation.py       # Input safety checks
+│
+├── surface
+│   └── logger.py                 # Logging and result output
+│
+├── learn
+│   └── store_feedback.py         # Stores bug–fix pairs for future learning
+│
+├── evaluation
+│   ├── evaluate_system.py        # End-to-end system evaluation
+│   └── get_ground_truth.py       # Ground truth extraction for evaluation
+│
+├── logs/                         # Runtime logs
+│
+├── requirements.txt
+├── README.md
+└── .env
+```
+---
 # What Happens in the Pipeline
 
 ## 1. User Input
@@ -423,54 +466,6 @@ data = [1,2,3]
 print(get_item(data, 10))
 END
 ```
-
----
-
-# Project Structure
-
-```
-codefix-rag
-│
-├── datasets
-│   ├── raw/                      # Raw BugsInPy dataset
-│   ├── processed/                # Processed bug metadata
-│   ├── repos/                    # Cloned Python repositories
-│   ├── index/                    # FAISS vector index files
-│   └── learn/                    # Stored bug–fix feedback data
-│
-├── ingest
-│   └── ingest_bugsinpy.py        # Loads and prepares BugsInPy data
-│
-├── retrieve
-│   ├── build_index.py            # Builds FAISS vector index
-│   └── retrieve_similar_code.py  # Retrieves and reranks relevant code
-│
-├── reason
-│   └── generate_fix.py           # LLM-based bug fix generation
-│
-├── validation
-│   └── validate_patch.py         # Syntax, compile and lint validation
-│
-├── safety
-│   └── input_validation.py       # Input safety checks
-│
-├── surface
-│   └── logger.py                 # Logging and result output
-│
-├── learn
-│   └── store_feedback.py         # Stores bug–fix pairs for future learning
-│
-├── evaluation
-│   ├── evaluate_system.py        # End-to-end system evaluation
-│   └── get_ground_truth.py       # Ground truth extraction for evaluation
-│
-├── logs/                         # Runtime logs
-│
-├── requirements.txt
-├── README.md
-└── .env
-```
-
 
 ---
 
