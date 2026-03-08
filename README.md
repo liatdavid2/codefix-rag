@@ -339,9 +339,7 @@ score = 0.82
 ```
 
 Higher scores indicate more relevant code context.
-
 ---
-
 ## 5. Reason
 
 The **Reason** stage generates a candidate fix using the LLM.
@@ -377,7 +375,6 @@ Generated patch:
 ```
 
 This patch is produced in a standard diff format commonly used in bug-fixing workflows.
-
 ---
 
 ## 6. Validation
@@ -541,4 +538,39 @@ Interpretation:
 * **90%** of generated fixes produce syntactically valid Python code.
 * **10%** pass linting rules (flake8).
 
+---
+
+## Design Trade-offs
+
+* **FAISS vs distributed retrieval** – FAISS is simple and fast for a local MVP but does not scale like distributed vector databases.
+* **Reranking vs latency** – CrossEncoder improves retrieval quality but adds extra inference time.
+* **Small context vs full files** – Function-level snippets improve patch precision but may miss broader context.
+* **Validation vs runtime cost** – Syntax and lint checks improve reliability but increase pipeline latency.
+
+## Deployment
+
+* **API service** – In production the system would be exposed through a REST API.
+* **Async processing** – Long LLM requests can run through a job queue.
+* **Monitoring and logs** – Logging enables debugging and observability.
+* **Scalable retrieval** – The FAISS index could run as a retrieval service.
+
+## Optimization
+
+* **Embedding caching** – Avoid recomputing embeddings for repeated queries.
+* **Batch retrieval** – Process multiple queries together for better throughput.
+* **Context filtering** – Limit retrieved code to stay within token limits.
+* **Smaller embedding models** – Reduce latency while keeping good retrieval quality.
+
+## Fine-tuning
+
+* **Domain adaptation** – Fine-tune models for Python bug fixing.
+* **Bug-fix datasets** – Use datasets like BugsInPy to improve generation.
+* **Instruction tuning** – Train models to produce smaller and cleaner patches.
+
+## MVP Scope
+
+* **Local CLI system** – The current implementation runs as a local command-line tool.
+* **Offline index build** – Repositories are indexed once before retrieval.
+* **Single-query generation** – The system handles one request at a time.
+* **Evaluation module** – Retrieval and generation are evaluated offline.
 
