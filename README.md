@@ -2,14 +2,7 @@
 
 ### Retrieval-Augmented Bug Fixing for Python
 
-CodeFix-RAG is a system that detects and fixes Python bugs using a **Retrieval-Augmented Generation (RAG)** pipeline.
-
-The system combines:
-
-* semantic code retrieval
-* vector similarity search (FAISS)
-* neural reranking
-* LLM-based code repair
+CodeFix-RAG is a Retrieval-Augmented Generation system for Python bug fixing. It retrieves relevant code context from indexed repositories and uses an LLM to generate candidate fixes, explanations, and diff patches.
 
 Given a **buggy Python snippet**, the system retrieves similar code examples from indexed repositories and uses them as context for an LLM that generates:
 
@@ -181,7 +174,6 @@ The evaluation pipeline measures:
 * **Retrieval quality** (Recall@K)
 * **Syntax validity**
 * **Lint pass rate**
-* **Patch similarity**
 
 Evaluation scripts are located in:
 ```
@@ -536,20 +528,17 @@ Metrics used:
 
 * **Syntax validity** – whether the generated patch compiles as valid Python.
 * **Lint pass rate** – whether the patch passes static code checks.
-* **Patch similarity** – similarity between the generated patch and the ground-truth fix.
 
 Results:
 
 ```
 Syntax validity: 0.900
 Lint pass rate: 0.100
-Patch similarity: 0.015
 ```
 
 Interpretation:
 
 * **90%** of generated fixes produce syntactically valid Python code.
 * **10%** pass linting rules (flake8).
-* Patch similarity is low because LLM-generated fixes may differ structurally from the original developer patch while still addressing the bug.
 
 
