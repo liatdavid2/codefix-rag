@@ -472,35 +472,31 @@ Example record:
 ---
 # Running the System
 
-Install dependencies:
+Each major component of the system can be executed independently.
 
-```
-pip install -r requirements.txt
-```
+**Build the retrieval index**
 
-Run the system:
-
-```
-python -m generate.generate_fix
+```bash id="7km9i4"
+python -m retrieve.build_index
 ```
 
-Paste buggy Python code and terminate input with:
+Builds the FAISS vector index from the processed repositories.
 
-```
-END
-```
+**Run the bug fixing pipeline**
 
-Example:
-
-```
-def get_item(lst, index):
-    return lst[index]
-
-data = [1,2,3]
-print(get_item(data, 10))
-END
+```bash id="g0m5b3"
+python -m reason.generate_fix
 ```
 
+Runs the full pipeline: Safety → Retrieve → Reason → Validate → Surface.
+
+**Run system evaluation**
+
+```bash id="9h8q8o"
+python -m evaluation.evaluate_system
+```
+
+Evaluates retrieval and generation performance using the benchmark dataset.
 ---
 
 ## Retrieval Evaluation
