@@ -292,8 +292,8 @@ def validate_output(answer):
 
     return answer
   ```
- ---
 ---
+
 
 ## 3. Retrieve
 
