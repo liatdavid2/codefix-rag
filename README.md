@@ -9,6 +9,34 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * bug explanation
 * Git diff patch
 * corrected function
+---
+## Online Bug Fixing Pipeline
+
+
+```
+User Bug
+   │
+   ▼
+Safety Validation
+   │
+   ▼
+FAISS Retrieval
+   │
+   ▼
+CrossEncoder Rerank
+   │
+   ▼
+Prompt Builder
+   │
+   ▼
+LLM (GPT-4o-mini)
+   │
+   ▼
+Validation
+   │
+   ▼
+Patch + Explanation
+```
 
 ---
 # What Happens in the Pipeline
