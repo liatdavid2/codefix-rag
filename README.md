@@ -11,145 +11,6 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * corrected function
 
 ---
-
-## Key Components
-
-Retrieval: FAISS + BGE embeddings  
-Reranking: CrossEncoder (ms-marco-MiniLM)  
-Generation: GPT-4o-mini  
-Dataset: BugsInPy  
-Validation: AST + compile + lint
-
----
-
-# System Architecture
-
-CodeFix-RAG follows a modular LLM application pipeline:
-
-```
-Ingest → Retrieve → Reason → Validate → Surface → Learn
-```
-
-The system is organized into two main pipelines: **offline indexing** and **online bug fixing**.
-
----
-
-## Offline Pipeline (Index Construction)
-
-The offline pipeline prepares the code retrieval index from open-source repositories.
-
-```
-Open Source Python Repositories
-            |
-            v
-          Ingest
-     (parse BugsInPy metadata)
-            |
-            v
-     Python Code Parsing
-            |
-            v
-     Function Extraction
-            |
-            v
-        Code Chunking
-            |
-            v
-   Embedding Model (BGE-small)
-            |
-            v
-      Vector Embeddings
-            |
-            v
-        FAISS Index
-     (stored in datasets/index)
-```
-
-This stage runs once to build the vector index used for semantic code retrieval.
-
----
-
-## Online Pipeline (Bug Fix Generation)
-
-The online pipeline processes user input and generates candidate fixes.
-
-```
-Buggy Python Code (User Input)
-            |
-            v
-           Safety
-   (input validation checks)
-            |
-            v
-          Retrieve
-      FAISS Vector Search
-            |
-            v
-     CrossEncoder Reranker
-            |
-            v
-        Top-K Code Context
-            |
-            v
-           Reason
-      LLM Fix Generation
-        (GPT-4o-mini)
-            |
-            v
-          Validate
-   Syntax / Compile / Lint
-            |
-            v
-           Surface
-   Explanation + Patch + Logs
-            |
-            v
-            Learn
- Store Bug–Fix Pairs for Feedback
-```
-
----
-
-# Dataset: BugsInPy
-
-BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
-
-Each bug includes:
-
-* buggy version of the code
-* fixed version
-* tests that reproduce the bug
-
-Example metadata entry:
-
-```
-{
-  "bug_id": "pandas_82",
-  "project": "pandas",
-  "buggy_commit": "6f395ad",
-  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
-  "test_file": "pandas/tests/reshape/merge/test_merge.py"
-}
-```
-
----
-
-## Evaluation
-
-System performance is measured separately using the evaluation module.
-
-The evaluation pipeline measures:
-
-* **Retrieval quality** (Recall@K)
-* **Syntax validity**
-* **Lint pass rate**
-
-Evaluation scripts are located in:
-```
-evaluation/evaluate_system.py
-```
----
-
 # What Happens in the Pipeline
 
 ## 1. User Input
@@ -429,6 +290,146 @@ Example record:
 {"timestamp": "2026-03-06T14:14:35.978564", "buggy_code": "...", "generated_fix": "...", "explanation": "..."}
 ```
 ---
+
+## Key Components
+
+Retrieval: FAISS + BGE embeddings  
+Reranking: CrossEncoder (ms-marco-MiniLM)  
+Generation: GPT-4o-mini  
+Dataset: BugsInPy  
+Validation: AST + compile + lint
+
+---
+
+# System Architecture
+
+CodeFix-RAG follows a modular LLM application pipeline:
+
+```
+Ingest → Retrieve → Reason → Validate → Surface → Learn
+```
+
+The system is organized into two main pipelines: **offline indexing** and **online bug fixing**.
+
+---
+
+## Offline Pipeline (Index Construction)
+
+The offline pipeline prepares the code retrieval index from open-source repositories.
+
+```
+Open Source Python Repositories
+            |
+            v
+          Ingest
+     (parse BugsInPy metadata)
+            |
+            v
+     Python Code Parsing
+            |
+            v
+     Function Extraction
+            |
+            v
+        Code Chunking
+            |
+            v
+   Embedding Model (BGE-small)
+            |
+            v
+      Vector Embeddings
+            |
+            v
+        FAISS Index
+     (stored in datasets/index)
+```
+
+This stage runs once to build the vector index used for semantic code retrieval.
+
+---
+
+## Online Pipeline (Bug Fix Generation)
+
+The online pipeline processes user input and generates candidate fixes.
+
+```
+Buggy Python Code (User Input)
+            |
+            v
+           Safety
+   (input validation checks)
+            |
+            v
+          Retrieve
+      FAISS Vector Search
+            |
+            v
+     CrossEncoder Reranker
+            |
+            v
+        Top-K Code Context
+            |
+            v
+           Reason
+      LLM Fix Generation
+        (GPT-4o-mini)
+            |
+            v
+          Validate
+   Syntax / Compile / Lint
+            |
+            v
+           Surface
+   Explanation + Patch + Logs
+            |
+            v
+            Learn
+ Store Bug–Fix Pairs for Feedback
+```
+
+---
+
+# Dataset: BugsInPy
+
+BugsInPy is a benchmark dataset containing real bugs collected from open-source Python projects.
+
+Each bug includes:
+
+* buggy version of the code
+* fixed version
+* tests that reproduce the bug
+
+Example metadata entry:
+
+```
+{
+  "bug_id": "pandas_82",
+  "project": "pandas",
+  "buggy_commit": "6f395ad",
+  "fixed_commit": "e83a6bddac8c89b144dfe0783594dd332c5b3030",
+  "test_file": "pandas/tests/reshape/merge/test_merge.py"
+}
+```
+
+---
+
+## Evaluation
+
+System performance is measured separately using the evaluation module.
+
+The evaluation pipeline measures:
+
+* **Retrieval quality** (Recall@K)
+* **Syntax validity**
+* **Lint pass rate**
+
+Evaluation scripts are located in:
+```
+evaluation/evaluate_system.py
+```
+---
+
+
 # Running the System
 
 Each major component of the system can be executed independently.
