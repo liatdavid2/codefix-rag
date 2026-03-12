@@ -2,13 +2,18 @@
 
 ### Retrieval-Augmented Bug Fixing for Python
 
-CodeFix-RAG is a Retrieval-Augmented Generation system for Python bug fixing. It retrieves relevant code context from indexed repositories and uses an LLM to generate candidate fixes, explanations, and diff patches.
+## Problem Definition
 
-Given a **buggy Python snippet**, the system retrieves similar code examples from indexed repositories and uses them as context for an LLM that generates:
+Automatically detect and fix bugs in Python code using a Large Language Model (LLM) augmented with retrieved code context.
 
-* bug explanation
-* Git diff patch
-* corrected function
+### Input
+A buggy Python code snippet.
+
+### Output
+
+- Bug explanation  
+- Corrected code  
+- Git-style patch
 ---
 
 # System Architecture
