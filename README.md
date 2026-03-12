@@ -1,6 +1,4 @@
-# CodeFix-RAG
-
-### Retrieval-Augmented Bug Fixing for Python
+# CodeFix-RAG - Retrieval-Augmented Bug Fixing for Python
 
 ## Problem Definition
 
