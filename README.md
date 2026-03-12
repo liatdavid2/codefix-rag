@@ -131,8 +131,8 @@ Buggy Python Code (User Input)
                   │                            │
                   ▼                            │
           ┌────────────────┐                   │
-          │     Surface    │                  │
-          │ (return result)│                  │
+          │     Surface    │                   │
+          │ (return result)│                   │
           └────────────────┘                   │
                                                │
                                                ▼
