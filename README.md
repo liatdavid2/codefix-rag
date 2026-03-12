@@ -97,7 +97,7 @@ Buggy Python Code (User Input)
  Store Bug–Fix Pairs for Feedback
 ```
 
-## Agentic Loop
+## Agentic Loop (Planned)
 ```
                          ┌───────────────┐
                          │  Orchestrator │
