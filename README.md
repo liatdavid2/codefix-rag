@@ -10,33 +10,143 @@ Given a **buggy Python snippet**, the system retrieves similar code examples fro
 * Git diff patch
 * corrected function
 ---
-## Online Bug Fixing Pipeline
 
+# System Architecture
+
+CodeFix-RAG follows a modular LLM application pipeline:
 
 ```
-User Bug
-   │
-   ▼
-Safety Validation
-   │
-   ▼
-FAISS Retrieval
-   │
-   ▼
-CrossEncoder Rerank
-   │
-   ▼
-Prompt Builder
-   │
-   ▼
-LLM (GPT-4o-mini)
-   │
-   ▼
-Validation
-   │
-   ▼
-Patch + Explanation
+Ingest → Retrieve → Reason → Validate → Surface → Learn
 ```
+
+The system is organized into two main pipelines: **offline indexing** and **online bug fixing**.
+
+---
+
+## Offline Pipeline (Index Construction)
+
+The offline pipeline prepares the code retrieval index from open-source repositories.
+
+```
+Open Source Python Repositories
+            |
+            v
+          Ingest
+     (parse BugsInPy metadata)
+            |
+            v
+     Python Code Parsing
+            |
+            v
+     Function Extraction
+            |
+            v
+        Code Chunking
+            |
+            v
+   Embedding Model (BGE-small)
+            |
+            v
+      Vector Embeddings
+            |
+            v
+        FAISS Index
+     (stored in datasets/index)
+```
+
+This stage runs once to build the vector index used for semantic code retrieval.
+
+---
+
+## Online Pipeline (Bug Fix Generation)
+
+The online pipeline processes user input and generates candidate fixes.
+
+```
+Buggy Python Code (User Input)
+            |
+            v
+           Safety
+   (input validation checks)
+            |
+            v
+          Retrieve
+      FAISS Vector Search
+            |
+            v
+     CrossEncoder Reranker
+            |
+            v
+        Top-K Code Context
+            |
+            v
+           Reason
+      LLM Fix Generation
+        (GPT-4o-mini)
+            |
+            v
+          Validate
+   Syntax / Compile / Lint
+            |
+            v
+           Surface
+   Explanation + Patch + Logs
+            |
+            v
+            Learn
+ Store Bug–Fix Pairs for Feedback
+```
+
+## Agentic Loop
+```
+                         ┌───────────────┐
+                         │  Orchestrator │
+                         └───────┬───────┘
+                                 │
+                                 ▼
+                     ┌──────────────────────┐
+                     │   Retrieval Agent    │
+                     │ (vector search +     │
+                     │      rerank)         │
+                     └──────────┬───────────┘
+                                │
+                                ▼
+                     ┌──────────────────────┐
+                     │     Reason Agent     │
+                     │  (LLM generates fix) │
+                     └──────────┬───────────┘
+                                │
+                                ▼
+                     ┌──────────────────────┐
+                     │   Validation Agent   │
+                     │ (syntax / compile /  │
+                     │        lint)         │
+                     └──────────┬───────────┘
+                                │
+                  ┌─────────────┴─────────────┐
+                  ▼                           ▼
+           ┌──────────────┐           ┌────────────────┐
+           │   Fix Valid  │           │  Fix Invalid   │
+           └──────┬───────┘           └────────┬───────┘
+                  │                            │
+                  ▼                            │
+          ┌────────────────┐                   │
+          │     Surface    │                  │
+          │ (return result)│                  │
+          └────────────────┘                   │
+                                               │
+                                               ▼
+                                   ┌──────────────────────┐
+                                   │   Feedback to LLM    │
+                                   │  (error explanation) │
+                                   └──────────┬───────────┘
+                                              │
+                                              ▼
+                                     ┌──────────────────┐
+                                     │   Reason Agent   │
+                                     └──────────────────┘
+```
+---
 
 ---
 # What Happens in the Pipeline
@@ -326,94 +436,6 @@ Reranking: CrossEncoder (ms-marco-MiniLM)
 Generation: GPT-4o-mini  
 Dataset: BugsInPy  
 Validation: AST + compile + lint
-
----
-
-# System Architecture
-
-CodeFix-RAG follows a modular LLM application pipeline:
-
-```
-Ingest → Retrieve → Reason → Validate → Surface → Learn
-```
-
-The system is organized into two main pipelines: **offline indexing** and **online bug fixing**.
-
----
-
-## Offline Pipeline (Index Construction)
-
-The offline pipeline prepares the code retrieval index from open-source repositories.
-
-```
-Open Source Python Repositories
-            |
-            v
-          Ingest
-     (parse BugsInPy metadata)
-            |
-            v
-     Python Code Parsing
-            |
-            v
-     Function Extraction
-            |
-            v
-        Code Chunking
-            |
-            v
-   Embedding Model (BGE-small)
-            |
-            v
-      Vector Embeddings
-            |
-            v
-        FAISS Index
-     (stored in datasets/index)
-```
-
-This stage runs once to build the vector index used for semantic code retrieval.
-
----
-
-## Online Pipeline (Bug Fix Generation)
-
-The online pipeline processes user input and generates candidate fixes.
-
-```
-Buggy Python Code (User Input)
-            |
-            v
-           Safety
-   (input validation checks)
-            |
-            v
-          Retrieve
-      FAISS Vector Search
-            |
-            v
-     CrossEncoder Reranker
-            |
-            v
-        Top-K Code Context
-            |
-            v
-           Reason
-      LLM Fix Generation
-        (GPT-4o-mini)
-            |
-            v
-          Validate
-   Syntax / Compile / Lint
-            |
-            v
-           Surface
-   Explanation + Patch + Logs
-            |
-            v
-            Learn
- Store Bug–Fix Pairs for Feedback
-```
 
 ---
 
